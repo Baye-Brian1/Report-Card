@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Eye, EyeOff, Lock, TriangleAlert } from "lucide-react";
+import {
+  Mail,
+  Eye,
+  EyeOff,
+  Lock,
+  TriangleAlert,
+  ArrowLeft,
+} from "lucide-react";
 
 const LoginPage = () => {
   const Navigate = useNavigate();
@@ -40,6 +47,9 @@ const LoginPage = () => {
         ></div>
       </div>
       <div className="border absolute bg-white md:w-88 border-white p-8 rounded-xs shadow-xl">
+        <div className="cursor-pointer" onClick={() => Navigate(-1)}>
+          <ArrowLeft className="w-5 h-5 text-[#64748B] hover:text-[#2563EB] transition" />
+        </div>
         <div className="text-center mb-2">
           <h2 className="text-[25px] font-bold text-[#1b2336] mb-1">
             Welcome Back!
@@ -119,13 +129,13 @@ const LoginPage = () => {
           </button>
           <div className="flex items-center">
             <span className="h-[1px] border border-[#E2E8F0] w-[25%]"></span>
-            <span className="text-sm text-[#64748B] mr-5 ml-5">or continue with</span>
+            <span className="text-sm text-[#64748B] mr-5 ml-5">
+              or continue with
+            </span>
             <span className="h-[1px] border border-[#E2E8F0] w-[25%]"></span>
           </div>
 
-          <button
-            className="w-full py-2 rounded-xs cursor-pointer text-black border border-[#E2E8F0] font-semibold hover:bg-gray-200 transition transform  flex items-center justify-center gap-2"
-          >
+          <button className="w-full py-2 rounded-xs cursor-pointer text-black border border-[#E2E8F0] font-semibold hover:bg-gray-200 transition transform  flex items-center justify-center gap-2">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
