@@ -58,7 +58,9 @@ export default function Layout() {
   const location = useLocation();
   const current =
     navItems.find((n) =>
-      n.path === "/" ? location.pathname === "/" : location.pathname.startsWith(n.path)
+      n.path === "/"
+        ? location.pathname === "/"
+        : location.pathname.startsWith(n.path),
     )?.label || "Dashboard";
 
   return (
@@ -72,7 +74,7 @@ export default function Layout() {
             </div>
             <div>
               <div className="text-lg font-bold leading-tight tracking-tight text-white">
-                SPXCC
+                SCHOOL
               </div>
               <div className="text-[11px] uppercase tracking-wider text-slate-400">
                 Records System
@@ -90,7 +92,9 @@ export default function Layout() {
           <div className="mx-4 mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between text-xs text-slate-300">
               <span>Term 2 of 3</span>
-              <span className="font-mono font-semibold text-[#0ea5e9]">66%</span>
+              <span className="font-mono font-semibold text-[#0ea5e9]">
+                66%
+              </span>
             </div>
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div className="h-full w-2/3 rounded-full bg-[#0ea5e9] transition-all duration-500" />
@@ -112,7 +116,7 @@ export default function Layout() {
           <header className="sticky top-0 z-10 flex flex-col gap-3 border-b border-[#e2e8f0] bg-white/90 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <span>SPXCC</span>
+                <span>SCHOOL</span>
                 <ChevronRight size={12} />
                 <span className="font-medium text-[#0ea5e9]">{current}</span>
               </div>
@@ -157,8 +161,7 @@ export default function Layout() {
           <main className="flex-1 px-6 py-6">
             <Outlet />
             <footer className="mt-8 pb-4 text-center text-xs text-slate-400">
-              St. Pius X Catholic College Tatum · Student Report Card &amp;
-              Information System
+              SCHOOL Report Card &amp; Information System
             </footer>
           </main>
         </div>
