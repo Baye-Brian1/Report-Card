@@ -67,29 +67,29 @@ const NavBar = ({ currentSection, onSectionChange }) => {
               <Menu className="w-6 h-6" />
             )}
           </button>
-        </div>  
-
-          {mobileOpen && (
-            <div className="md:hidden py-2">
-              {NavLink.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => scrollToSection(link.section)}
-                  className="block cursor-pointer w-full text-left py-3 text-black hover:text-[#1D4ED8] transition"
-                >
-                  {link.name}
-                </button>
-              ))}
-              <Link
-                to="/login"
-                onClick={()=> setMobileOpen(false)}
-                className="block w-full text-center bg-[#2563EB] text-white font-semibold px-8 py-2 rounded-[4px] hover:bg-[#1D4ED8] transition  transform scale-105"
-              >
-                Login
-              </Link>
-            </div>
-          )}
         </div>
+
+        {mobileOpen && (
+          <div className="md:hidden py-2">
+            {NavLink.map((link) => (
+              <button
+                key={link.name}
+                onClick={() => scrollToSection(link.section)}
+                className="block cursor-pointer w-full text-left py-3 text-black hover:text-[#1D4ED8] transition"
+              >
+                {link.name}
+              </button>
+            ))}
+            <Link
+              to="/login"
+              onClick={() => setMobileOpen(false)}
+              className="block w-full text-center bg-[#2563EB] text-white font-semibold px-8 py-2 rounded-[4px] hover:bg-[#1D4ED8] transition  transform scale-105"
+            >
+              Login
+            </Link>
+          </div>
+        )}
+      </div>
     </nav>
   );
 };
