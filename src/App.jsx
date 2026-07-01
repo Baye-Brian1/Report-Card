@@ -21,7 +21,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
 
       <Route element={<Layout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/students" element={<StudentEntry />} />
         <Route path="/marks" element={<MarksEntry />} />
         <Route path="/classes" element={<Classes />} />
