@@ -1,6 +1,21 @@
 import React, { useState } from "react";
-import { Save, UserCog, School, CalendarRange, SlidersHorizontal } from "lucide-react";
-import { Card, CardHeader, PageHeading, Button, Label, Input, Select, Badge } from "../components/ui";
+import {
+  Save,
+  UserCog,
+  School,
+  CalendarRange,
+  SlidersHorizontal,
+} from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  PageHeading,
+  Button,
+  Label,
+  Input,
+  Select,
+  Badge,
+} from "../components/ui";
 
 function Toggle({ checked, onChange, label }) {
   return (
@@ -26,9 +41,9 @@ function Toggle({ checked, onChange, label }) {
 }
 
 const users = [
-  { name: "Admin User", email: "admin@spxcc.edu", role: "Administrator" },
-  { name: "Mrs. Ekema Grace", email: "ekema.g@spxcc.edu", role: "Teacher" },
-  { name: "Mr. Njoh Divine", email: "njoh.d@spxcc.edu", role: "Teacher" },
+  { name: "Admin User", email: "admin@sch.edu", role: "Administrator" },
+  { name: "Mrs. Ekema Grace", email: "ekema.g@sch.edu", role: "Teacher" },
+  { name: "Mr. Njoh Divine", email: "njoh.d@sch.edu", role: "Teacher" },
 ];
 
 export default function Settings() {
@@ -54,21 +69,24 @@ export default function Settings() {
           <div className="flex flex-col gap-4">
             <div>
               <Label htmlFor="schoolName">School Name</Label>
-              <Input id="schoolName" defaultValue="St. Pius X Catholic College Tatum" />
+              <Input id="schoolName" defaultValue="SCHOOL" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="code">School Code</Label>
-                <Input id="code" defaultValue="SPXCC" />
+                <Input id="code" defaultValue="SCH" />
               </div>
               <div>
                 <Label htmlFor="region">Region</Label>
-                <Input id="region" defaultValue="South-West" />
+                <Input id="region" defaultValue="North-West" />
               </div>
             </div>
             <div>
               <Label htmlFor="motto">Motto</Label>
-              <Input id="motto" placeholder="e.g. Faith, Discipline, Excellence" />
+              <Input
+                id="motto"
+                placeholder="e.g. Faith, Discipline, Excellence"
+              />
             </div>
             <Button icon={Save} className="mt-1 self-start">
               Save Changes
@@ -169,11 +187,15 @@ export default function Settings() {
                       .slice(0, 2)}
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-[#1e3a8a]">{u.name}</div>
+                    <div className="text-sm font-medium text-[#1e3a8a]">
+                      {u.name}
+                    </div>
                     <div className="text-xs text-slate-400">{u.email}</div>
                   </div>
                 </div>
-                <Badge tone={u.role === "Administrator" ? "navy" : "sky"}>{u.role}</Badge>
+                <Badge tone={u.role === "Administrator" ? "navy" : "sky"}>
+                  {u.role}
+                </Badge>
               </div>
             ))}
           </div>

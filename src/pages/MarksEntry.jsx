@@ -1,14 +1,36 @@
 import React, { useState } from "react";
 import { Save, CheckCircle2 } from "lucide-react";
-import { Card, CardHeader, PageHeading, Button, Label, Select, Badge } from "../components/ui";
+import {
+  Card,
+  CardHeader,
+  PageHeading,
+  Button,
+  Label,
+  Select,
+  Badge,
+} from "../components/ui";
 
 const classes = ["Form 1", "Form 2", "Form 3", "Form 4", "Form 5"];
-const subjects = ["Mathematics", "English Language", "Biology", "Chemistry", "History", "French"];
-const sequences = ["Sequence 1", "Sequence 2", "Sequence 3", "Sequence 4", "Sequence 5", "Sequence 6"];
+const subjects = [
+  "Mathematics",
+  "English Language",
+  "Biology",
+  "Chemistry",
+  "History",
+  "French",
+];
+const sequences = [
+  "Sequence 1",
+  "Sequence 2",
+  "Sequence 3",
+  "Sequence 4",
+  "Sequence 5",
+  "Sequence 6",
+];
 
 const rosterByClass = {
-  "Form 1": [{ id: "SPX-0001", name: "Ama Nkeng" }],
-  "Form 2": [{ id: "SPX-0002", name: "Brian Ateh" }],
+  "Form 1": [{ id: "SCH001", name: "Ama Nkeng" }],
+  "Form 2": [{ id: "SCH002", name: "Brian Ateh" }],
   "Form 3": [],
   "Form 4": [],
   "Form 5": [],
@@ -50,11 +72,18 @@ export default function MarksEntry() {
       />
 
       <Card>
-        <CardHeader title="Selection" subtitle="Choose which marks you're entering." />
+        <CardHeader
+          title="Selection"
+          subtitle="Choose which marks you're entering."
+        />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="cls">Class</Label>
-            <Select id="cls" value={cls} onChange={(e) => setCls(e.target.value)}>
+            <Select
+              id="cls"
+              value={cls}
+              onChange={(e) => setCls(e.target.value)}
+            >
               {classes.map((c) => (
                 <option key={c}>{c}</option>
               ))}
@@ -62,7 +91,11 @@ export default function MarksEntry() {
           </div>
           <div>
             <Label htmlFor="subject">Subject</Label>
-            <Select id="subject" value={subject} onChange={(e) => setSubject(e.target.value)}>
+            <Select
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            >
               {subjects.map((s) => (
                 <option key={s}>{s}</option>
               ))}
@@ -70,7 +103,11 @@ export default function MarksEntry() {
           </div>
           <div>
             <Label htmlFor="sequence">Sequence</Label>
-            <Select id="sequence" value={sequence} onChange={(e) => setSequence(e.target.value)}>
+            <Select
+              id="sequence"
+              value={sequence}
+              onChange={(e) => setSequence(e.target.value)}
+            >
               {sequences.map((s) => (
                 <option key={s}>{s}</option>
               ))}
@@ -118,10 +155,17 @@ export default function MarksEntry() {
                   {roster.map((s) => {
                     const g = grade(marks[s.id]);
                     return (
-                      <tr key={s.id} className="transition-colors hover:bg-[#f1f5f9]/60">
+                      <tr
+                        key={s.id}
+                        className="transition-colors hover:bg-[#f1f5f9]/60"
+                      >
                         <td className="px-4 py-3">
-                          <div className="font-medium text-[#1e3a8a]">{s.name}</div>
-                          <div className="font-mono text-xs text-slate-400">{s.id}</div>
+                          <div className="font-medium text-[#1e3a8a]">
+                            {s.name}
+                          </div>
+                          <div className="font-mono text-xs text-slate-400">
+                            {s.id}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <input
@@ -136,7 +180,11 @@ export default function MarksEntry() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          {g ? <Badge tone={g.tone}>{g.label}</Badge> : <span className="text-slate-300">—</span>}
+                          {g ? (
+                            <Badge tone={g.tone}>{g.label}</Badge>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
                         </td>
                       </tr>
                     );

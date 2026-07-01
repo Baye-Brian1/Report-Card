@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { Search, FileDown, Printer, FileText } from "lucide-react";
-import { Card, CardHeader, PageHeading, Button, Badge, EmptyState } from "../components/ui";
+import {
+  Card,
+  CardHeader,
+  PageHeading,
+  Button,
+  Badge,
+  EmptyState,
+} from "../components/ui";
 
 const students = [
   {
-    id: "SPX-0001",
+    id: "SCH001",
     name: "Ama Nkeng",
     class: "Form 1",
     term: "Term 2",
@@ -18,7 +25,7 @@ const students = [
     ],
   },
   {
-    id: "SPX-0002",
+    id: "SCH002",
     name: "Brian Ateh",
     class: "Form 2",
     term: "Term 2",
@@ -38,7 +45,7 @@ export default function ReportCards() {
   const [selected, setSelected] = useState(students[0]);
 
   const filtered = students.filter((s) =>
-    `${s.name} ${s.id}`.toLowerCase().includes(query.toLowerCase())
+    `${s.name} ${s.id}`.toLowerCase().includes(query.toLowerCase()),
   );
 
   return (
@@ -128,7 +135,9 @@ export default function ReportCards() {
                 </div>
                 <div className="rounded-xl border border-[#e2e8f0] p-4 text-center">
                   <Badge tone="emerald">Promoted</Badge>
-                  <div className="mt-1 text-xs text-slate-500">Term Outcome</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    Term Outcome
+                  </div>
                 </div>
               </div>
 
@@ -150,10 +159,16 @@ export default function ReportCards() {
                   <tbody className="divide-y divide-[#e2e8f0]">
                     {selected.subjects.map((sub) => (
                       <tr key={sub.name} className="hover:bg-[#f1f5f9]/60">
-                        <td className="px-4 py-3 font-medium text-[#1e3a8a]">{sub.name}</td>
-                        <td className="px-4 py-3 font-mono text-slate-600">{sub.mark}</td>
+                        <td className="px-4 py-3 font-medium text-[#1e3a8a]">
+                          {sub.name}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-slate-600">
+                          {sub.mark}
+                        </td>
                         <td className="px-4 py-3">
-                          <Badge tone={sub.grade === "A" ? "emerald" : "sky"}>{sub.grade}</Badge>
+                          <Badge tone={sub.grade === "A" ? "emerald" : "sky"}>
+                            {sub.grade}
+                          </Badge>
                         </td>
                       </tr>
                     ))}

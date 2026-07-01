@@ -103,8 +103,8 @@ export default function Dashboard() {
               System Overview
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
-              Welcome back. Here's where St. Pius X Catholic College Tatum's
-              academic records stand this term.
+              Welcome back. Here's where SCHOOL academic records stand this
+              term.
             </p>
           </div>
           <button
