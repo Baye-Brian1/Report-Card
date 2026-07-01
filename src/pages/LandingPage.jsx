@@ -1,5 +1,12 @@
 import Navbar from "../components/NavBar";
-import { CheckCircle, GraduationCap, Users, FileArchive, FileBadge } from "lucide-react";
+import {
+  CheckCircle,
+  GraduationCap,
+  Users,
+  Lock,
+  FileBox,
+  FileBadge,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import Card from "../components/Card";
 
@@ -73,37 +80,33 @@ const LandingPage = () => {
       </section>
       <section id="features" className="py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-[20px] font-semibold text-[#2563eb]">
+          <div className="text-center mb-10">
+            <h2 className="text-xl font-semibold text-[#2563eb]">
               Features
             </h2>
-            <p className="text-lg md:text-4xl font-bold text-[#0F172A] max-w-2xl mx-auto">
+            <p className="text-xl md:text-[42px] font-semibold text-[#0F172A] max-w-2xl mx-auto">
               Everything You Need
             </p>
             <div className="grid grid-cols-4 gap-4 p-8">
               <Card
-                icon={<FileArchive/>}
-                title="User Profile"
-                text="Manage your personal information and settings"
-                image="/images/profile.jpg"
+                icon={<FileBox />}
+                title="Input Marks Easily"
+                text="Add students by class and input marks for each subject"
               />
               <Card
-                icon={<FileArchive/>}
-                title="User Profile"
-                text="Manage your personal information and settings"
-                image="/images/profile.jpg"
+                icon={<FileBadge />}
+                title="Generate Report card"
+                text="Manage your personal information and setting"
               />
               <Card
-                icon={<FileArchive/>}
+                image="/assets/Excel.png"
                 title="User Profile"
                 text="Manage your personal information and settings"
-                image="/images/profile.jpg"
               />
               <Card
-                icon={<FileArchive/>}
-                title="User Profile"
+                icon={<Lock />}
+                title="Secure & Reliable"
                 text="Manage your personal information and settings"
-                image="/images/profile.jpg"
               />
             </div>
           </div>
@@ -113,49 +116,44 @@ const LandingPage = () => {
       {/* How It Works */}
       <section id="how-it-works" className="py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <div className="text-center mb-10">
+            <h2 className="text-lg md:text-xl font-semibold text-[#2563eb] mb-1">
               How It Works
             </h2>
-            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
-              Simple process from quiz creation to student results
+            <p className="text-xl md:text-[42px] font-semibold text-[#0F172A] max-w-2xl mx-auto">
+              Simple steps, Powerful Results
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center text-2xl font-bold text-white border border-white/20">
+            <div className="flex items-start gap-3 p-2 border-[#2563eb] border-r h-25">
+              <div className="w-10 h-10 mx-auto mb-6 rounded-full bg-[#2563eb] shadow-2xl flex items-center justify-center text-md font-semibold text-white p-4">
                 1
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Teacher Creates Quiz
-              </h3>
-              <p className="text-gray-400">
-                Upload PDF or manually create questions with answer key
-              </p>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold text-[#2563eb] mb-3">Teacher Creates Quiz</h3>
+                <p className="text-[#0F172A] text-sm">Upload PDF or manually create questions with answer key</p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center text-2xl font-bold text-white border border-white/20">
+             <div className="flex items-start gap-3 p-2 border-[#2563eb] border-r h-25">
+              <div className="w-10 h-10 mx-auto mb-6 rounded-full bg-[#2563eb] shadow-2xl flex items-center justify-center text-md font-semibold text-white p-4">
                 2
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Student Takes Quiz
-              </h3>
-              <p className="text-gray-400">
-                Access available quizzes and submit answers
-              </p>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold text-[#2563eb] mb-3">Teacher Creates Quiz</h3>
+                <p className="text-[#0F172A] text-sm">Upload PDF or manually create questions with answer key</p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center text-2xl font-bold text-white border border-white/20">
+            <div className="flex items-start gap-3 p-2 h-25">
+              <div className="w-10 h-10 mx-auto mb-6 rounded-full bg-[#2563eb] shadow-2xl flex items-center justify-center text-md font-semibold text-white p-4">
                 3
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                Instant Results & Feedback
-              </h3>
-              <p className="text-gray-400">
-                Get grades, correct answers, and personalized feedback
-              </p>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold text-[#2563eb] mb-3">Teacher Creates Quiz</h3>
+                <p className="text-[#0F172A] text-sm">Upload PDF or manually create questions with answer key</p>
+              </div>
             </div>
+            
           </div>
         </div>
       </section>
@@ -163,17 +161,17 @@ const LandingPage = () => {
       {/* CTA */}
       <section id="cta" className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="backdrop-blur-xl bg-[rgba(16,22,36,0.8)] rounded-xs p-8 md:p-12 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <div className="p-8 md:p-12 text-center">
+            <h2 className="text-3xl md:text-5xl font-bold text-blue-600 mb-4">
               Ready to reduce paperwork and save time?
             </h2>
-            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8">
+            <p className="text-lg md:text-xl text-[#0F172A] max-w-2xl mx-auto mb-8">
               Join us and start creating report card effortlessly which saves
               time and reduces alot of paperwork
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xs bg-white text-black font-semibold hover:bg-gray-200 transition transform hover:scale-105"
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-xs bg-blue-600 text-white font-semibold transition transform hover:scale-105"
             >
               Get Started Now
             </Link>
