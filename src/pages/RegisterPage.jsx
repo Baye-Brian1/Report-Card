@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Eye, EyeOff, Lock, TriangleAlert, User } from "lucide-react";
+import {
+  Mail,
+  Eye,
+  EyeOff,
+  Lock,
+  TriangleAlert,
+  User,
+  ArrowLeft,
+} from "lucide-react";
 
 const RegisterPage = () => {
   const Navigate = useNavigate();
@@ -17,16 +25,18 @@ const RegisterPage = () => {
     if (!name || !email || !password) {
       setError("please fill in all the fields");
       return;
-    } 
+    }
     setLoading(true);
-    if (password.length<6){
-        setError("Password must contain at least 6 characters")
+    if (password.length < 6) {
+      setError("Password must contain at least 6 characters");
     }
     try {
       await (name, email, password);
       Navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.error || "Registration failed. Please try again");
+      setError(
+        err.response?.data?.error || "Registration failed. Please try again",
+      );
     } finally {
       setLoading(false);
     }
@@ -44,6 +54,9 @@ const RegisterPage = () => {
         ></div>
       </div>
       <div className="border absolute bg-white md:w-88 border-white p-8 rounded-xs shadow-xl">
+        <div className="cursor-pointer" onClick={() => Navigate(-1)}>
+          <ArrowLeft className="w-5 h-5 text-[#64748B] hover:text-[#2563EB] transition" />
+        </div>
         <div className="text-center mb-2">
           <h2 className="text-[25px] font-bold text-[#1b2336] mb-1">
             Create Account
@@ -59,10 +72,8 @@ const RegisterPage = () => {
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-            <label className="text-sm font-semibold text-[#0F172A]">
-              Name
-            </label>
+          <div>
+            <label className="text-sm font-semibold text-[#0F172A]">Name</label>
             <div className="relative">
               <User className="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
@@ -118,13 +129,16 @@ const RegisterPage = () => {
               </button>
             </div>
 
-              <div className="flex gap-2 items-center mt-3 mb-3">
-                <input
-                  type="checkbox"
-                  className="focus:outline-blue-600 border-blue-600"
-                />
-                <p className="text-sm">I agree to the <span className="text-blue-600">Terms & Conditions</span></p>
-              </div>
+            <div className="flex gap-2 items-center mt-3 mb-3">
+              <input
+                type="checkbox"
+                className="focus:outline-blue-600 border-blue-600"
+              />
+              <p className="text-sm">
+                I agree to the{" "}
+                <span className="text-blue-600">Terms & Conditions</span>
+              </p>
+            </div>
           </div>
           <button
             type="submit"
@@ -133,7 +147,6 @@ const RegisterPage = () => {
           >
             {loading ? "Processing..." : <>Register</>}
           </button>
-          
         </form>
         <div className="mt-2 text-center">
           <p className="text-gray-400 text-sm">
