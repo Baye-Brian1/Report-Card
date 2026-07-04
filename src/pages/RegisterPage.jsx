@@ -42,7 +42,7 @@ const RegisterPage = () => {
     }
   };
   return (
-    <div className="min-h-screen items-center justify-center flex px-4 py-8 relative  overflow:hidden">
+    <div className="min-h-screen items-center bg-[#e8eef9]  justify-center flex px-4 py-8 relative  overflow:hidden">
       <div className="absolute inset-0">
         <div
           className="absolute inset-0"

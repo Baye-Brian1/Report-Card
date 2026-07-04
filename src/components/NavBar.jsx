@@ -1,9 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookOpen, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const NavBar = ({ currentSection, onSectionChange }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(()=>{
+    const handleScroll=()=>{
+        if(window.scrollY>60){
+            setScrolled(true);
+        }else{
+            setScrolled(false)
+        }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return() => window.removeEventListener("scroll", handleScroll)
+
+  },[])
 
   const NavLink = [
     { name: "Home", section: "home" },
@@ -21,9 +35,10 @@ const NavBar = ({ currentSection, onSectionChange }) => {
     }
     setMobileOpen(false);
   };
+
   return (
-    <nav className="fixed top-0 right-0 left-0 backdrop-blur-xl z-50 border-b border-[rgba(37,99,235,0.05)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`fixed top-0 right-0 left-0 backdrop-blur-xl z-50 transition-all duration-500 ${scrolled?"bg-white shadow-md":"bg-transparent"}`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div
             onClick={() => scrollToSection("hero")}
@@ -36,7 +51,7 @@ const NavBar = ({ currentSection, onSectionChange }) => {
           </div>
           <div className="hidden md:flex items-center font-semibold space-x-6">
             {NavLink.map((link) => (
-              <button
+              <p
                 key={link.name}
                 onClick={() => scrollToSection(link.section)}
                 className={`text-sm cursor-pointer transition ${
@@ -46,7 +61,7 @@ const NavBar = ({ currentSection, onSectionChange }) => {
                 }`}
               >
                 {link.name}
-              </button>
+              </p>
             ))}
           </div>
           <div className="hidden md:block">
@@ -72,13 +87,13 @@ const NavBar = ({ currentSection, onSectionChange }) => {
         {mobileOpen && (
           <div className="md:hidden py-2">
             {NavLink.map((link) => (
-              <button
+              <p
                 key={link.name}
                 onClick={() => scrollToSection(link.section)}
                 className="block cursor-pointer w-full text-left py-3 text-black hover:text-[#1D4ED8] transition"
               >
                 {link.name}
-              </button>
+              </p>
             ))}
             <Link
               to="/login"
