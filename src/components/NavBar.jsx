@@ -8,7 +8,7 @@ const NavBar = ({ currentSection, onSectionChange }) => {
   const NavLink = [
     { name: "Home", section: "home" },
     { name: "About", section: "about" },
-    { name: "Feature", section: "feature" },
+    { name: "Feature", section: "features" },
     { name: "How It Works", section: "how-it-works" },
     { name: "CTA", section: "cta" },
   ];
