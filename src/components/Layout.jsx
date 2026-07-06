@@ -17,7 +17,7 @@ import {
 import { focusRing } from "./ui";
 
 export const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Student Entry", icon: UserPlus, path: "/students" },
   { label: "Marks Entry", icon: PenSquare, path: "/marks" },
   { label: "Classes", icon: Users, path: "/classes" },
