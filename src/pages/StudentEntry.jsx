@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { UserPlus, Search, Pencil, Trash2, GraduationCap } from "lucide-react";
 import {
   Card,
@@ -12,59 +12,62 @@ import {
   Badge,
   focusRing,
 } from "../components/ui";
-
-const initialStudents = [
-  {
-    id: "SPX-0001",
-    name: "Ama Nkeng",
-    class: "Form 1",
-    gender: "Female",
-    guardian: "Mr. Nkeng Paul",
-    status: "Active",
-  },
-  {
-    id: "SPX-0002",
-    name: "Brian Ateh",
-    class: "Form 2",
-    gender: "Male",
-    guardian: "Mrs. Ateh Comfort",
-    status: "Active",
-  },
-];
-
-const classes = ["Form 1", "Form 2", "Form 3", "Form 4", "Form 5"];
+import { addStudent, getClasses, getStudents } from "../utils/api";
 
 export default function StudentEntry() {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [form, setForm] = useState({
     name: "",
     dob: "",
     gender: "Male",
-    class: "Form 1",
+    class: "",
     guardian: "",
     phone: "",
   });
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getStudents()
+      .then(setStudents)
+      .catch((err) => setError(err.message));
+    getClasses()
+      .then((data) => setClasses(data.map((c) => c.name)))
+      .catch((err) => setError(err.message));
+  }, []);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim()) return;
-    const nextId = `SPX-${String(students.length + 1).padStart(4, "0")}`;
-    setStudents((s) => [
-      ...s,
-      {
-        id: nextId,
-        name: form.name,
-        class: form.class,
+    setSaving(true);
+    setError("");
+    try {
+      const student = await addStudent({
+        name: form.name.trim(),
+        class: form.class || classes[0] || "Form 1",
         gender: form.gender,
-        guardian: form.guardian || "—",
-        status: "Active",
-      },
-    ]);
-    setForm({ name: "", dob: "", gender: "Male", class: "Form 1", guardian: "", phone: "" });
+        guardian: form.guardian.trim() || "—",
+        phone: form.phone.trim() || "—",
+      });
+      setStudents((prev) => [...prev, student]);
+      setForm({
+        name: "",
+        dob: "",
+        gender: "Male",
+        class: classes[0] || "Form 1",
+        guardian: "",
+        phone: "",
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -150,9 +153,15 @@ export default function StudentEntry() {
               />
             </div>
 
-            <Button type="submit" icon={UserPlus} className="mt-2 w-full">
-              Save Student
+            <Button
+              type="submit"
+              icon={UserPlus}
+              className="mt-2 w-full"
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Save Student"}
             </Button>
+            {error && <p className="text-sm text-rose-500">{error}</p>}
           </form>
         </Card>
 
@@ -181,14 +190,33 @@ export default function StudentEntry() {
               No students yet — add your first one.
             </div>
           ) : (
-            <Table columns={["Student ID", "Name", "Class", "Gender", "Guardian", "Status", ""]}>
+            <Table
+              columns={[
+                "Student ID",
+                "Name",
+                "Class",
+                "Gender",
+                "Guardian",
+                "Phone",
+                "Status",
+                "",
+              ]}
+            >
               {students.map((s) => (
-                <tr key={s.id} className="transition-colors hover:bg-[#f1f5f9]/60">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{s.id}</td>
-                  <td className="px-4 py-3 font-medium text-[#1e3a8a]">{s.name}</td>
+                <tr
+                  key={s.id}
+                  className="transition-colors hover:bg-[#f1f5f9]/60"
+                >
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                    {s.id}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-[#1e3a8a]">
+                    {s.name}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{s.class}</td>
                   <td className="px-4 py-3 text-slate-600">{s.gender}</td>
                   <td className="px-4 py-3 text-slate-600">{s.guardian}</td>
+                  <td className="px-4 py-3 text-slate-600">{s.phone || "—"}</td>
                   <td className="px-4 py-3">
                     <Badge tone="emerald">{s.status}</Badge>
                   </td>
@@ -203,7 +231,9 @@ export default function StudentEntry() {
                       <button
                         aria-label="Remove student"
                         onClick={() =>
-                          setStudents((list) => list.filter((x) => x.id !== s.id))
+                          setStudents((list) =>
+                            list.filter((x) => x.id !== s.id),
+                          )
                         }
                         className={`rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 ${focusRing}`}
                       >
