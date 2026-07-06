@@ -9,6 +9,18 @@ import {
   Select,
 } from "../components/ui";
 import { getClasses, getMarks, getRoster } from "../utils/api";
+import logo from "../assets/logo.jpg";
+
+/* ---------- Edit these to match your actual school ---------- */
+const SCHOOL_NAME_EN = "ST. THERESE SECONDARY SCHOOL";
+const SCHOOL_TOWN = "MINDOUROU";
+const SCHOOL_MOTTO = "Motto: Prayers – Hardwork – Discipline";
+const REGIONAL_DELEGATION = "REGIONAL DELEGATION FOR EAST";
+const SUB_DIVISION = "SUB-INSPECTORATE FOR DJA";
+const ACADEMIC_YEAR = "2025/2026";
+const CLASS_MASTER_NAME = "—";
+const SCHOOL_TEL = "—";
+/* -------------------------------------------------------------- */
 
 const subjectRows = [
   { name: "English Language", coefficient: 5 },
@@ -114,35 +126,14 @@ const summaryToneClasses = {
   rose: "bg-rose-100 text-rose-600",
 };
 
-function InfoTile({ label, value }) {
+function FieldRow({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4 print:rounded-md print:p-2">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400 print:text-[7px] print:tracking-[0.15em]">
-        {label}
-      </div>
-      <div className="mt-1 text-sm font-semibold text-[#0f172a] print:mt-0.5 print:text-[10px]">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SectionLabel({ children }) {
-  return (
-    <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400 print:text-[7px] print:tracking-[0.15em]">
-      {children}
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="font-semibold text-slate-500 print:text-[9.5px]">
-        {label}
+    <div className="flex items-baseline gap-1.5">
+      <span className="font-semibold text-slate-600 print:text-[8.5px]">
+        {label}:
       </span>
-      <span className="text-right text-slate-800 print:text-[9.5px]">
-        {value}
+      <span className="flex-1 border-b border-dotted border-slate-300 text-slate-800 print:text-[8.5px]">
+        {value || "\u00A0"}
       </span>
     </div>
   );
@@ -192,9 +183,12 @@ function ReportCardBody({
   position,
   classAverage,
   status,
+  classSize,
   className = "",
 }) {
   const sequences = termSequences[term] || [];
+  const termTitle = `${term.toUpperCase()} REPORT CARD`;
+
   return (
     <div
       className={`report-card-sheet overflow-hidden rounded-[28px] border border-[#e2e8f0] bg-white shadow-sm print:rounded-none print:border-0 print:shadow-none ${className}`}
@@ -202,57 +196,59 @@ function ReportCardBody({
       <div className="h-2 w-full bg-gradient-to-r from-[#1e3a8a] via-[#0ea5e9] to-[#10b981] print:h-1" />
 
       <div className="p-6 sm:p-8 print:p-3">
-        {/* Letterhead */}
-        <div className="mb-6 flex flex-col gap-4 border-b border-dashed border-[#e2e8f0] pb-6 sm:flex-row sm:items-center sm:justify-between print:mb-2 print:gap-1 print:pb-2">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.35em] text-[#0ea5e9] print:text-[8px] print:tracking-[0.2em]">
-              Springfield College
-            </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0f172a] sm:text-3xl print:mt-0 print:text-base">
-              School Report Card
+        {/* Bilingual Cameroon-style letterhead */}
+        <div className="mb-4 grid grid-cols-1 items-stretch gap-3 border-b border-dashed border-[#e2e8f0] pb-4 sm:grid-cols-3 print:mb-2 print:gap-2 print:pb-2">
+          <div className="rounded-xl border border-[#e2e8f0] p-3 text-center text-[10.5px] leading-snug text-slate-700 print:rounded-md print:p-1.5 print:text-[7px]">
+            <p className="font-bold uppercase">Republic of Cameroon</p>
+            <p>----------</p>
+            <p>Peace – Work – Fatherland</p>
+            <p>----------</p>
+            <p className="font-semibold underline">{SCHOOL_NAME_EN}</p>
+            <p className="font-semibold">{SCHOOL_TOWN}</p>
+            <p className="mt-1 italic text-slate-500">{SCHOOL_MOTTO}</p>
+          </div>
+
+          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center print:py-0.5">
+            <img
+              src={logo}
+              alt="School Logo"
+              style={{ width: "100px", borderRadius: "50%" }}
+            />
+            <h1 className="mt-1 text-base font-bold uppercase tracking-tight text-[#0f172a] print:mt-0.5 print:text-[10px]">
+              {termTitle}
             </h1>
-            <p className="mt-1 text-sm text-slate-500 print:mt-0 print:text-[9px]">
-              {term} · Academic Year 2025 – 2026
+            <p className="text-xs text-slate-500 print:text-[7px]">
+              Academic Year {ACADEMIC_YEAR}
             </p>
           </div>
-          <div className="flex items-center gap-3 self-start rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 print:gap-2 print:rounded-md print:px-2 print:py-1.5">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1e3a8a] to-[#0ea5e9] text-xl font-bold text-white shadow-sm print:h-8 print:w-8 print:rounded-lg print:text-sm">
-              S
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400 print:text-[6.5px] print:tracking-[0.1em]">
-                School Seal
-              </p>
-              <p className="text-sm font-semibold text-[#1e3a8a] print:text-[9px]">
-                Springfield College
-              </p>
-            </div>
+
+          <div className="rounded-xl border border-[#e2e8f0] p-3 text-center text-[10.5px] leading-snug text-slate-700 print:rounded-md print:p-1.5 print:text-[7px]">
+            <p className="font-bold uppercase">République du Cameroun</p>
+            <p>----------</p>
+            <p>Paix – Travail – Patrie</p>
+            <p>----------</p>
+            <p className="font-semibold underline">
+              Ministry of Secondary Education
+            </p>
+            <p>----------</p>
+            <p className="font-semibold underline">{REGIONAL_DELEGATION}</p>
+            <p>----------</p>
+            <p className="font-semibold underline">{SUB_DIVISION}</p>
           </div>
         </div>
 
-        {/* Info strip */}
-        <div className="mb-6 grid gap-3 sm:grid-cols-3 print:mb-2 print:gap-1.5">
-          <InfoTile label="Term" value={term} />
-          <InfoTile label="Date Issued" value={reportDate} />
-          <InfoTile label="Authorised By" value="Class Teacher / Principal" />
-        </div>
-
-        {/* Details + Summary */}
-        <div className="mb-6 grid gap-4 md:grid-cols-2 print:mb-2 print:gap-1.5">
-          <div className="rounded-2xl border border-[#e2e8f0] p-5 print:rounded-md print:p-2">
-            <SectionLabel>Student Details</SectionLabel>
-            <dl className="mt-3 space-y-2 text-sm text-slate-700 print:mt-1 print:space-y-0.5">
-              <Row label="Name" value={student.name} />
-              <Row label="Student ID" value={student.id} />
-              <Row label="Class" value={student.class} />
-              <Row label="Gender" value={student.gender} />
-              <Row label="Date of Birth" value={student.dob || "Not set"} />
-            </dl>
-          </div>
+        {/* Identification fields */}
+        <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-3 print:mb-2 print:gap-x-4 print:gap-y-0.5 print:text-[8.5px]">
+          <FieldRow label="Full Name" value={student.name} />
+          <FieldRow label="Student ID" value={student.id} />
+          <FieldRow label="Class" value={student.class} />
+          <FieldRow label="Date of birth" value={student.dob || "—"} />
+          <FieldRow label="Class Master" value={CLASS_MASTER_NAME} />
+          <FieldRow label="Date issued" value={reportDate} />
         </div>
 
         {/* Subjects table */}
-        <div className="mb-6 overflow-x-auto rounded-2xl border border-[#e2e8f0] print:mb-2 print:overflow-visible print:rounded-md">
+        <div className="mb-4 overflow-x-auto rounded-2xl border border-[#e2e8f0] print:mb-2 print:overflow-visible print:rounded-md">
           <table className="w-full min-w-[900px] text-left text-sm print:min-w-0 print:text-[8.5px]">
             <thead>
               <tr className="bg-[#1e3a8a] text-white">
@@ -331,7 +327,7 @@ function ReportCardBody({
         </div>
 
         {/* Bottom tiles */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:mb-2 print:gap-1.5">
+        <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:mb-2 print:gap-1.5">
           <SummaryTile
             label="Student Average"
             value={average.toFixed(2)}
@@ -357,7 +353,7 @@ function ReportCardBody({
         </div>
 
         {/* Remarks */}
-        <div className="grid gap-4 lg:grid-cols-2 print:gap-1.5">
+        <div className="grid grid-cols-2 gap-4 print:gap-1.5">
           <RemarkCard
             title="Class Master's Remarks"
             text="Well done. Keep working hard, and aim for consistency across all subjects."
@@ -740,6 +736,7 @@ export default function ReportCards() {
                 status={
                   selectedRecord ? getStatus(selectedRecord.average) : "—"
                 }
+                classSize={students.length}
               />
             )}
           </Card>
@@ -770,6 +767,7 @@ export default function ReportCards() {
                   position={pos}
                   classAverage={classAverage}
                   status={getStatus(record.average)}
+                  classSize={students.length}
                 />
               </div>
             );

@@ -44,16 +44,20 @@ public class Main {
 
     private static Map<String, String> parseJsonObject(String s) {
         Map<String, String> map = new HashMap<>();
-        if (s == null) return map;
+        if (s == null)
+            return map;
         s = s.trim();
-        if (s.startsWith("{")) s = s.substring(1);
-        if (s.endsWith("}")) s = s.substring(0, s.length() - 1);
+        if (s.startsWith("{"))
+            s = s.substring(1);
+        if (s.endsWith("}"))
+            s = s.substring(0, s.length() - 1);
         boolean inQuotes = false;
         StringBuilder cur = new StringBuilder();
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '"') inQuotes = !inQuotes;
+            if (c == '"')
+                inQuotes = !inQuotes;
             if (c == ',' && !inQuotes) {
                 parts.add(cur.toString());
                 cur.setLength(0);
@@ -61,10 +65,12 @@ public class Main {
                 cur.append(c);
             }
         }
-        if (cur.length() > 0) parts.add(cur.toString());
+        if (cur.length() > 0)
+            parts.add(cur.toString());
         for (String p : parts) {
             int idx = p.indexOf(':');
-            if (idx < 0) continue;
+            if (idx < 0)
+                continue;
             String k = p.substring(0, idx).trim();
             String v = p.substring(idx + 1).trim();
             k = stripQuotes(k);
@@ -76,7 +82,8 @@ public class Main {
 
     private static String stripQuotes(String s) {
         s = s.trim();
-        if (s.startsWith("\"") && s.endsWith("\"")) return s.substring(1, s.length() - 1);
+        if (s.startsWith("\"") && s.endsWith("\""))
+            return s.substring(1, s.length() - 1);
         return s;
     }
 
@@ -90,7 +97,8 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (int i = 0; i < list.size(); i++) {
-                    if (i > 0) sb.append(',');
+                    if (i > 0)
+                        sb.append(',');
                     sb.append(list.get(i).toJson());
                 }
                 sb.append(']');
@@ -106,8 +114,8 @@ public class Main {
                         obj.getOrDefault("class", obj.getOrDefault("className", "Form 1")),
                         obj.getOrDefault("gender", "Male"),
                         obj.getOrDefault("guardian", "—"),
-                        obj.getOrDefault("phone", "—")
-                );
+                        obj.getOrDefault("phone", "—"),
+                        obj.getOrDefault("dob", "—"));
                 DataStore.save(DATA_FILE);
                 sendJson(exchange, 201, s.toJson());
                 return;
@@ -124,7 +132,8 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (int i = 0; i < classes.size(); i++) {
-                    if (i > 0) sb.append(',');
+                    if (i > 0)
+                        sb.append(',');
                     sb.append(classes.get(i).toJson());
                 }
                 sb.append(']');
@@ -159,7 +168,8 @@ public class Main {
                     if (idx > 0) {
                         String k = q.substring(0, idx);
                         String v = q.substring(idx + 1).replace("+", " ");
-                        if ("class".equalsIgnoreCase(k)) className = java.net.URLDecoder.decode(v, StandardCharsets.UTF_8);
+                        if ("class".equalsIgnoreCase(k))
+                            className = java.net.URLDecoder.decode(v, StandardCharsets.UTF_8);
                     }
                 }
             }
@@ -167,7 +177,8 @@ public class Main {
             StringBuilder sb = new StringBuilder();
             sb.append('[');
             for (int i = 0; i < roster.size(); i++) {
-                if (i > 0) sb.append(',');
+                if (i > 0)
+                    sb.append(',');
                 sb.append(roster.get(i).toJson());
             }
             sb.append(']');
@@ -182,17 +193,24 @@ public class Main {
             if ("GET".equalsIgnoreCase(method)) {
                 String query = exchange.getRequestURI().getQuery();
                 Map<String, String> qmap = new HashMap<>();
-                if (query != null) for (String q : query.split("&")) {
-                    int idx = q.indexOf('='); if (idx>0) qmap.put(q.substring(0,idx), java.net.URLDecoder.decode(q.substring(idx+1), StandardCharsets.UTF_8));
-                }
+                if (query != null)
+                    for (String q : query.split("&")) {
+                        int idx = q.indexOf('=');
+                        if (idx > 0)
+                            qmap.put(q.substring(0, idx),
+                                    java.net.URLDecoder.decode(q.substring(idx + 1), StandardCharsets.UTF_8));
+                    }
                 String cls = qmap.getOrDefault("class", "");
                 String subject = qmap.getOrDefault("subject", "");
                 String sequence = qmap.getOrDefault("sequence", "");
                 Map<String, Double> marks = DataStore.getMarks(cls, subject, sequence);
-                StringBuilder sb = new StringBuilder(); sb.append('{');
-                boolean first=true;
+                StringBuilder sb = new StringBuilder();
+                sb.append('{');
+                boolean first = true;
                 for (Map.Entry<String, Double> e : marks.entrySet()) {
-                    if (!first) sb.append(','); first=false;
+                    if (!first)
+                        sb.append(',');
+                    first = false;
                     sb.append('"').append(e.getKey()).append('"').append(':').append(e.getValue());
                 }
                 sb.append('}');
@@ -212,14 +230,17 @@ public class Main {
                     int colon = body.indexOf(':', midx);
                     int start = body.indexOf('{', colon);
                     int end = body.indexOf('}', start);
-                    if (start>0 && end>start) {
-                        String inner = body.substring(start+1,end);
+                    if (start > 0 && end > start) {
+                        String inner = body.substring(start + 1, end);
                         for (String p : inner.split(",")) {
                             int idx = p.indexOf(':');
-                            if (idx>0) {
-                                String k = stripQuotes(p.substring(0,idx).trim());
-                                String v = p.substring(idx+1).trim();
-                                try { marks.put(k, Double.parseDouble(v)); } catch (Exception ex) {}
+                            if (idx > 0) {
+                                String k = stripQuotes(p.substring(0, idx).trim());
+                                String v = p.substring(idx + 1).trim();
+                                try {
+                                    marks.put(k, Double.parseDouble(v));
+                                } catch (Exception ex) {
+                                }
                             }
                         }
                     }
@@ -236,25 +257,54 @@ public class Main {
     // Data classes & store
     static class Student implements Serializable {
         private static final long serialVersionUID = 1L;
-        String id, name, className, gender, guardian, phone, status;
+        String id, name, className, gender, guardian, phone, dob, status;
 
-        Student(String id, String name, String className, String gender, String guardian, String phone) {
-            this.id = id; this.name = name; this.className = className; this.gender = gender; this.guardian = guardian; this.phone = phone; this.status = "Active";
+        Student(String id, String name, String className, String gender, String guardian, String phone, String dob) {
+            this.id = id;
+            this.name = name;
+            this.className = className;
+            this.gender = gender;
+            this.guardian = guardian;
+            this.phone = phone;
+            this.dob = dob;
+            this.status = "Active";
         }
 
         String toJson() {
-            return String.format(Locale.ROOT, "{\"id\":\"%s\",\"name\":\"%s\",\"class\":\"%s\",\"gender\":\"%s\",\"guardian\":\"%s\",\"phone\":\"%s\",\"status\":\"%s\"}", escape(id), escape(name), escape(className), escape(gender), escape(guardian), escape(phone), escape(status));
+            return String.format(Locale.ROOT,
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"class\":\"%s\",\"gender\":\"%s\",\"guardian\":\"%s\",\"phone\":\"%s\",\"dob\":\"%s\",\"status\":\"%s\"}",
+                    escape(id), escape(name), escape(className), escape(gender), escape(guardian), escape(phone),
+                    escape(dob), escape(status));
         }
 
-        private String escape(String s) { return s.replace("\\", "\\\\").replace("\"", "\\\""); }
+        private String escape(String s) {
+            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
     }
 
     static class ClassInfo implements Serializable {
         private static final long serialVersionUID = 1L;
-        String name; String teacher; Double average; int students;
-        ClassInfo(String name) { this.name = name; this.teacher = "Unassigned"; this.average = null; this.students = 0; }
-        String toJson() { return String.format(Locale.ROOT, "{\"name\":\"%s\",\"students\":%d,\"average\":%s,\"teacher\":\"%s\"}", escape(name), students, average==null?"null":String.format(Locale.ROOT,"%.2f",average), escape(teacher)); }
-        private String escape(String s) { return s.replace("\\", "\\\\").replace("\"", "\\\""); }
+        String name;
+        String teacher;
+        Double average;
+        int students;
+
+        ClassInfo(String name) {
+            this.name = name;
+            this.teacher = "Unassigned";
+            this.average = null;
+            this.students = 0;
+        }
+
+        String toJson() {
+            return String.format(Locale.ROOT, "{\"name\":\"%s\",\"students\":%d,\"average\":%s,\"teacher\":\"%s\"}",
+                    escape(name), students, average == null ? "null" : String.format(Locale.ROOT, "%.2f", average),
+                    escape(teacher));
+        }
+
+        private String escape(String s) {
+            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
     }
 
     static class DataStore {
@@ -266,20 +316,26 @@ public class Main {
         static synchronized void load(File f) {
             if (!f.exists()) {
                 // seed default classes
-                for (String n : Arrays.asList("Form 1","Form 2","Form 3","Form 4","Form 5")) classes.add(new ClassInfo(n));
+                for (String n : Arrays.asList("Form 1", "Form 2", "Form 3", "Form 4", "Form 5"))
+                    classes.add(new ClassInfo(n));
                 return;
             }
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) {
                 Object obj = ois.readObject();
                 if (obj instanceof Map) {
-                    Map<?,?> m = (Map<?,?>) obj;
+                    Map<?, ?> m = (Map<?, ?>) obj;
                     Object s = m.get("students");
                     Object c = m.get("classes");
                     Object mk = m.get("marks");
-                    students.clear(); classes.clear(); marks.clear();
-                    if (s instanceof List) students.addAll((List<Student>) s);
-                    if (c instanceof List) classes.addAll((List<ClassInfo>) c);
-                    if (mk instanceof Map) marks.putAll((Map) mk);
+                    students.clear();
+                    classes.clear();
+                    marks.clear();
+                    if (s instanceof List)
+                        students.addAll((List<Student>) s);
+                    if (c instanceof List)
+                        classes.addAll((List<ClassInfo>) c);
+                    if (mk instanceof Map)
+                        marks.putAll((Map) mk);
                 }
             } catch (Exception ex) {
                 System.err.println("Failed to load datastore: " + ex.getMessage());
@@ -298,36 +354,57 @@ public class Main {
             }
         }
 
-        static synchronized Student addStudent(String name, String className, String gender, String guardian, String phone) {
+        static synchronized Student addStudent(String name, String className, String gender, String guardian,
+                String phone, String dob) {
             String id = String.format("SPX-%04d", students.size() + 1);
-            Student s = new Student(id, name, className, gender, guardian, phone);
+            Student s = new Student(id, name, className, gender, guardian, phone, dob);
             students.add(s);
             // ensure class exists
             boolean found = false;
-            for (ClassInfo c : classes) if (c.name.equals(className)) { c.students++; found=true; break; }
-            if (!found) classes.add(new ClassInfo(className));
+            for (ClassInfo c : classes)
+                if (c.name.equals(className)) {
+                    c.students++;
+                    found = true;
+                    break;
+                }
+            if (!found)
+                classes.add(new ClassInfo(className));
             return s;
         }
 
-        static synchronized List<Student> getStudents() { return new ArrayList<>(students); }
+        static synchronized List<Student> getStudents() {
+            return new ArrayList<>(students);
+        }
 
         static synchronized List<Student> getStudentsByClass(String className) {
-            if (className == null || className.isEmpty()) return new ArrayList<>(students);
+            if (className == null || className.isEmpty())
+                return new ArrayList<>(students);
             List<Student> out = new ArrayList<>();
-            for (Student s : students) if (className.equals(s.className)) out.add(s);
+            for (Student s : students)
+                if (className.equals(s.className))
+                    out.add(s);
             return out;
         }
 
-        static synchronized List<ClassInfo> getClasses() { return new ArrayList<>(classes); }
+        static synchronized List<ClassInfo> getClasses() {
+            return new ArrayList<>(classes);
+        }
 
-        static synchronized ClassInfo addClass(String name) { ClassInfo c = new ClassInfo(name); classes.add(c); return c; }
+        static synchronized ClassInfo addClass(String name) {
+            ClassInfo c = new ClassInfo(name);
+            classes.add(c);
+            return c;
+        }
 
         static synchronized void saveMarks(String cls, String subject, String sequence, Map<String, Double> m) {
-                        Map<String, Double> existing = marks.computeIfAbsent(cls, k -> new HashMap<>()).computeIfAbsent(subject, k -> new HashMap<>()).computeIfAbsent(sequence, k -> new HashMap<>()); existing.putAll(m);
+            Map<String, Double> existing = marks.computeIfAbsent(cls, k -> new HashMap<>())
+                    .computeIfAbsent(subject, k -> new HashMap<>()).computeIfAbsent(sequence, k -> new HashMap<>());
+            existing.putAll(m);
         }
 
         static synchronized Map<String, Double> getMarks(String cls, String subject, String sequence) {
-            return marks.getOrDefault(cls, Collections.emptyMap()).getOrDefault(subject, Collections.emptyMap()).getOrDefault(sequence, Collections.emptyMap());
+            return marks.getOrDefault(cls, Collections.emptyMap()).getOrDefault(subject, Collections.emptyMap())
+                    .getOrDefault(sequence, Collections.emptyMap());
         }
     }
 }

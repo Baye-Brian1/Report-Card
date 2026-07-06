@@ -53,6 +53,7 @@ export default function StudentEntry() {
         gender: form.gender,
         guardian: form.guardian.trim() || "—",
         phone: form.phone.trim() || "—",
+        dob: form.dob || "—",
       });
       setStudents((prev) => [...prev, student]);
       setForm({
