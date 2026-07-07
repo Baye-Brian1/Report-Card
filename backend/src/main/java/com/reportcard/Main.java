@@ -26,6 +26,7 @@ public class Main {
         server.createContext("/api/classes", new ClassesHandler());
         server.createContext("/api/roster", new RosterHandler());
         server.createContext("/api/marks", new MarksHandler());
+        server.createContext("/api/activities", new ActivitiesHandler());
 
         server.setExecutor(null);
         server.start();
@@ -254,6 +255,37 @@ public class Main {
         }
     }
 
+    static class ActivitiesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String method = exchange.getRequestMethod();
+            if ("GET".equalsIgnoreCase(method)) {
+                List<ActivityEntry> list = DataStore.getActivities();
+                StringBuilder sb = new StringBuilder();
+                sb.append('[');
+                for (int i = 0; i < list.size(); i++) {
+                    if (i > 0)
+                        sb.append(',');
+                    sb.append(list.get(i).toJson());
+                }
+                sb.append(']');
+                sendJson(exchange, 200, sb.toString());
+                return;
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> obj = parseJsonObject(body);
+                String type = obj.getOrDefault("type", "Report Card");
+                String text = obj.getOrDefault("text", "Report card generated");
+                DataStore.logActivity(type, text);
+                DataStore.save(DATA_FILE);
+                sendJson(exchange, 201, "{\"status\":\"ok\"}");
+                return;
+            }
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+        }
+    }
+
     // Data classes & store
     static class Student implements Serializable {
         private static final long serialVersionUID = 1L;
@@ -307,9 +339,32 @@ public class Main {
         }
     }
 
+    static class ActivityEntry implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String type;
+        String text;
+        long timestamp;
+
+        ActivityEntry(String type, String text, long timestamp) {
+            this.type = type;
+            this.text = text;
+            this.timestamp = timestamp;
+        }
+
+        String toJson() {
+            return String.format(Locale.ROOT, "{\"type\":\"%s\",\"text\":\"%s\",\"timestamp\":%d}", escape(type),
+                    escape(text), timestamp);
+        }
+
+        private String escape(String s) {
+            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
+    }
+
     static class DataStore {
         private static final List<Student> students = new ArrayList<>();
         private static final List<ClassInfo> classes = new ArrayList<>();
+        private static final List<ActivityEntry> activities = new ArrayList<>();
         // marks: class -> subject -> sequence -> studentId -> mark
         private static final Map<String, Map<String, Map<String, Map<String, Double>>>> marks = new HashMap<>();
 
@@ -327,15 +382,19 @@ public class Main {
                     Object s = m.get("students");
                     Object c = m.get("classes");
                     Object mk = m.get("marks");
+                    Object ac = m.get("activities");
                     students.clear();
                     classes.clear();
                     marks.clear();
+                    activities.clear();
                     if (s instanceof List)
                         students.addAll((List<Student>) s);
                     if (c instanceof List)
                         classes.addAll((List<ClassInfo>) c);
                     if (mk instanceof Map)
                         marks.putAll((Map) mk);
+                    if (ac instanceof List)
+                        activities.addAll((List<ActivityEntry>) ac);
                 }
             } catch (Exception ex) {
                 System.err.println("Failed to load datastore: " + ex.getMessage());
@@ -348,10 +407,23 @@ public class Main {
                 m.put("students", new ArrayList<>(students));
                 m.put("classes", new ArrayList<>(classes));
                 m.put("marks", new HashMap<>(marks));
+                m.put("activities", new ArrayList<>(activities));
                 oos.writeObject(m);
             } catch (Exception ex) {
                 System.err.println("Failed to save datastore: " + ex.getMessage());
             }
+        }
+
+        static synchronized void logActivity(String type, String text) {
+            activities.add(0, new ActivityEntry(type, text, System.currentTimeMillis()));
+            // keep the log from growing forever
+            while (activities.size() > 200) {
+                activities.remove(activities.size() - 1);
+            }
+        }
+
+        static synchronized List<ActivityEntry> getActivities() {
+            return new ArrayList<>(activities);
         }
 
         static synchronized Student addStudent(String name, String className, String gender, String guardian,
@@ -369,6 +441,7 @@ public class Main {
                 }
             if (!found)
                 classes.add(new ClassInfo(className));
+            logActivity("Student", "New student enrolled — " + name + " (" + className + ")");
             return s;
         }
 
@@ -393,13 +466,17 @@ public class Main {
         static synchronized ClassInfo addClass(String name) {
             ClassInfo c = new ClassInfo(name);
             classes.add(c);
+            logActivity("Class", "New class added — " + name);
             return c;
         }
 
         static synchronized void saveMarks(String cls, String subject, String sequence, Map<String, Double> m) {
-            Map<String, Double> existing = marks.computeIfAbsent(cls, k -> new HashMap<>())
-                    .computeIfAbsent(subject, k -> new HashMap<>()).computeIfAbsent(sequence, k -> new HashMap<>());
+            Map<String, Double> existing = marks
+                    .computeIfAbsent(cls, k -> new HashMap<>())
+                    .computeIfAbsent(subject, k -> new HashMap<>())
+                    .computeIfAbsent(sequence, k -> new HashMap<>());
             existing.putAll(m);
+            logActivity("Marks", "Marks entered — " + cls + ", " + subject + ", " + sequence);
         }
 
         static synchronized Map<String, Double> getMarks(String cls, String subject, String sequence) {
