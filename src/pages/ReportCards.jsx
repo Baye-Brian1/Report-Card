@@ -9,10 +9,21 @@ import {
   Select,
 } from "../components/ui";
 
-import { getClasses, getMarks, getRoster, logActivity } from "../utils/api";
+import {
+  getClasses,
+  getMarks,
+  getRoster,
+  logActivity,
+  getTeachers,
+  getSettings,
+} from "../utils/api";
 import logo from "../assets/logo.jpg";
 import stamp from "../assets/stamp.webp";
-
+import {
+  getSubjectsForStudent,
+  getTeacherName,
+  requiresStream,
+} from "../utils/subjects";
 /* ---------- Edit these to match your actual school ---------- */
 const SCHOOL_NAME_EN = "NCY SECONDARY SCHOOL";
 const SCHOOL_TOWN = "BAMENDA";
@@ -23,46 +34,10 @@ const ACADEMIC_YEAR = "2025/2026";
 const CLASS_MASTER_NAME = "—";
 /* -------------------------------------------------------------- */
 
-const subjectRows = [
-  { name: "English Language", coefficient: 5 },
-  { name: "French Language", coefficient: 5 },
-  { name: "Mathematics", coefficient: 5 },
-  { name: "Geography", coefficient: 3 },
-  { name: "Physics", coefficient: 3 },
-  { name: "Chemistry", coefficient: 3 },
-  { name: "Biology", coefficient: 3 },
-  { name: "History", coefficient: 3 },
-  { name: "Literature in English", coefficient: 3 },
-  { name: "Computer Science", coefficient: 3 },
-  { name: "Sports", coefficient: 1 },
-  { name: "Manual Labour", coefficient: 1 },
-  { name: "Citizenship", coefficient: 3 },
-  { name: "Food and Nutrition", coefficient: 3 },
-  { name: "Sound and Word Building", coefficient: 3 },
-];
-
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],
   "Second Term": ["Sequence 3", "Sequence 4"],
   "Third Term": ["Sequence 5", "Sequence 6"],
-};
-
-const teacherAssignments = {
-  "English Language": "Mrs. Ekema Grace",
-  "French Language": "Mr. Njoh Divine",
-  Mathematics: "Mr. Njoh Divine",
-  Geography: "Mrs. Ekema Grace",
-  Physics: "Mr. Njoh Divine",
-  Chemistry: "Mrs. Ekema Grace",
-  Biology: "Mrs. Ekema Grace",
-  History: "Mrs. Ekema Grace",
-  "Literature in English": "Mrs. Ekema Grace",
-  "Computer Science": "Mr. Njoh Divine",
-  Sports: "Mr. Njoh Divine",
-  "Manual Labour": "Mrs. Ekema Grace",
-  Citizenship: "Mr. Njoh Divine",
-  "Food and Nutrition": "Mrs. Ekema Grace",
-  "Sound and Word Building": "Mrs. Ekema Grace",
 };
 
 function grade(mark) {
@@ -97,20 +72,18 @@ function getStatus(average) {
   return "Fail";
 }
 
-function computeSubjectRanks(studentId, records) {
-  return subjectRows.reduce((acc, subject) => {
-    const ranking = records
-      .map((r) => ({
-        id: r.student.id,
-        score: r.subjects
-          .find((s) => s.name === subject.name)
-          .marks.reduce((sum, m) => sum + m, 0),
-      }))
-      .sort((a, b) => b.score - a.score);
-    const idx = ranking.findIndex((item) => item.id === studentId);
-    acc[subject.name] = idx >= 0 ? idx + 1 : "—";
-    return acc;
-  }, {});
+function computeSubjectRanks(studentId, records, subjectName) {
+  const ranking = records
+    .filter((r) => r.subjects.some((s) => s.name === subjectName))
+    .map((r) => ({
+      id: r.student.id,
+      score: r.subjects
+        .find((s) => s.name === subjectName)
+        .marks.reduce((sum, m) => sum + m, 0),
+    }))
+    .sort((a, b) => b.score - a.score);
+  const idx = ranking.findIndex((item) => item.id === studentId);
+  return idx >= 0 ? idx + 1 : "—";
 }
 
 function computePosition(studentId, records) {
@@ -119,17 +92,20 @@ function computePosition(studentId, records) {
   return idx >= 0 ? idx + 1 : null;
 }
 
-function computeTermAverage(studentId, term, classMarksData) {
+// Takes the full student object (not just the id) because the subject list
+// — and therefore the weighting — depends on the student's class/option/electives.
+function computeTermAverage(student, term, classMarksData) {
   const sequences = termSequences[term] || [];
   if (sequences.length === 0) return null;
 
+  const subjectList = getSubjectsForStudent(student);
   let totalWeighted = 0;
   let totalCoefficient = 0;
   let hasAnyMark = false;
 
-  subjectRows.forEach((subject) => {
+  subjectList.forEach((subject) => {
     const marks = sequences.map((sequence) =>
-      Number(classMarksData[subject.name]?.[sequence]?.[studentId] ?? 0),
+      Number(classMarksData[subject.name]?.[sequence]?.[student.id] ?? 0),
     );
     if (marks.some((m) => m > 0)) hasAnyMark = true;
     const subjectAverage = marks.reduce((sum, m) => sum + m, 0) / marks.length;
@@ -429,6 +405,7 @@ function ReportCardBody({
 }) {
   const sequences = termSequences[term] || [];
   const termTitle = `${term.toUpperCase()} REPORT CARD`;
+  const streamLabel = student.option ? ` — ${student.option}` : "";
 
   return (
     <div
@@ -482,7 +459,7 @@ function ReportCardBody({
         <div className="mb-2.5 grid grid-cols-1 gap-x-5 gap-y-1 text-xs sm:grid-cols-3 print:mb-2 print:gap-x-4 print:gap-y-0.5 print:text-[9.5px]">
           <FieldRow label="Full Name" value={student.name} />
           <FieldRow label="Student ID" value={student.id} />
-          <FieldRow label="Class" value={student.class} />
+          <FieldRow label="Class" value={`${student.class}${streamLabel}`} />
           <FieldRow label="Date of birth" value={student.dob || "—"} />
           <FieldRow label="Class Master" value={CLASS_MASTER_NAME} />
           <FieldRow label="Date issued" value={reportDate} />
@@ -609,6 +586,8 @@ export default function ReportCards() {
   const [classMarks, setClassMarks] = useState({});
   const [error, setError] = useState("");
   const [printAll, setPrintAll] = useState(false);
+  const [optionFilter, setOptionFilter] = useState("All");
+  const [teachers, setTeachers] = useState([]);
 
   useEffect(() => {
     getClasses()
@@ -618,6 +597,21 @@ export default function ReportCards() {
         if (classNames.length > 0) setSelectedClass(classNames[0]);
       })
       .catch((err) => setError(err.message));
+
+    getTeachers()
+      .then(setTeachers)
+      .catch((err) => setError(err.message));
+
+    // Default to whatever the school has set as the current term.
+    getSettings()
+      .then((settings) => {
+        if (termSequences[settings.currentTerm]) {
+          setTerm(settings.currentTerm);
+        }
+      })
+      .catch(() => {
+        // Keep the built-in default if settings can't be loaded.
+      });
   }, []);
 
   useEffect(() => {
@@ -642,11 +636,23 @@ export default function ReportCards() {
 
     const loadMarks = async () => {
       try {
+        // Different students may study different subjects (Science vs
+        // Arts, plus electives), so we fetch marks for the union of every
+        // subject actually studied by anyone in this class roster —
+        // not a single fixed subject list.
+        const subjectNames = Array.from(
+          new Set(
+            students.flatMap((s) =>
+              getSubjectsForStudent(s).map((sub) => sub.name),
+            ),
+          ),
+        );
+
         const results = await Promise.all(
-          subjectRows.flatMap((subject) =>
+          subjectNames.flatMap((subjectName) =>
             allSequences.map((sequence) =>
-              getMarks(selectedClass, subject.name, sequence).then((marks) => ({
-                subject: subject.name,
+              getMarks(selectedClass, subjectName, sequence).then((marks) => ({
+                subject: subjectName,
                 sequence,
                 marks,
               })),
@@ -673,7 +679,7 @@ export default function ReportCards() {
     return () => {
       active = false;
     };
-  }, [selectedClass]);
+  }, [selectedClass, students]);
 
   useEffect(() => {
     if (!printAll) return;
@@ -691,27 +697,36 @@ export default function ReportCards() {
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
+  const streamed = requiresStream(selectedClass);
+
   const filteredStudents = useMemo(
     () =>
-      students.filter((student) =>
-        `${student.name} ${student.id}`
-          .toLowerCase()
-          .includes(search.toLowerCase()),
-      ),
-    [students, search],
+      students
+        .filter((student) =>
+          streamed && optionFilter !== "All"
+            ? student.option === optionFilter
+            : true,
+        )
+        .filter((student) =>
+          `${student.name} ${student.id}`
+            .toLowerCase()
+            .includes(search.toLowerCase()),
+        ),
+    [students, search, streamed, optionFilter],
   );
 
   const studentRecords = useMemo(() => {
     const sequences = termSequences[term] || [];
     return students.map((student) => {
-      const subjects = subjectRows.map((subject) => {
+      const subjectList = getSubjectsForStudent(student);
+      const subjects = subjectList.map((subject) => {
         const marks = sequences.map((sequence) =>
           Number(classMarks[subject.name]?.[sequence]?.[student.id] ?? 0),
         );
         const average = marks.reduce((sum, m) => sum + m, 0) / marks.length;
         return {
           ...subject,
-          teacher: teacherAssignments[subject.name] || "—",
+          teacher: getTeacherName(teachers, student.class, subject.name),
           marks,
           average,
           grade: grade(average),
@@ -740,7 +755,7 @@ export default function ReportCards() {
         average: totalCoefficient ? totalWeighted / totalCoefficient : 0,
       };
     });
-  }, [students, classMarks, term]);
+  }, [students, classMarks, term, teachers]);
 
   const selectedRecord = useMemo(
     () =>
@@ -770,13 +785,13 @@ export default function ReportCards() {
 
   const selectedSubjects = useMemo(() => {
     if (!selectedRecord) return [];
-    const ranks = computeSubjectRanks(
-      selectedRecord.student.id,
-      studentRecords,
-    );
     return selectedRecord.subjects.map((s) => ({
       ...s,
-      rank: ranks[s.name],
+      rank: computeSubjectRanks(
+        selectedRecord.student.id,
+        studentRecords,
+        s.name,
+      ),
       remark: subjectRemark(s.average),
     }));
   }, [selectedRecord, studentRecords]);
@@ -788,13 +803,9 @@ export default function ReportCards() {
     const map = {};
     students.forEach((student) => {
       map[student.id] = {
-        "First Term": computeTermAverage(student.id, "First Term", classMarks),
-        "Second Term": computeTermAverage(
-          student.id,
-          "Second Term",
-          classMarks,
-        ),
-        "Third Term": computeTermAverage(student.id, "Third Term", classMarks),
+        "First Term": computeTermAverage(student, "First Term", classMarks),
+        "Second Term": computeTermAverage(student, "Second Term", classMarks),
+        "Third Term": computeTermAverage(student, "Third Term", classMarks),
       };
     });
     return map;
@@ -954,7 +965,10 @@ export default function ReportCards() {
                       ? "border-[#0ea5e9] bg-[#0ea5e9]/10 text-[#0b61a6]"
                       : "border-[#e2e8f0] bg-white text-slate-700 hover:border-[#0ea5e9] hover:bg-[#f1f5f9]"
                   }`}
-                  onClick={() => setSelectedClass(name)}
+                  onClick={() => {
+                    setSelectedClass(name);
+                    setOptionFilter("All");
+                  }}
                 >
                   <span>{name}</span>
                   <ChevronRight size={18} />
@@ -984,6 +998,21 @@ export default function ReportCards() {
                 className="w-full rounded-full border border-[#e2e8f0] bg-[#f1f5f9] py-2 pl-9 pr-3 text-sm text-slate-600 placeholder:text-slate-400 focus:border-[#0ea5e9] focus:bg-white focus:outline-none"
               />
             </div>
+            {streamed && (
+              <div className="mb-4">
+                <Select
+                  value={optionFilter}
+                  onChange={(e) => {
+                    setOptionFilter(e.target.value);
+                    setSelectedStudent(null);
+                  }}
+                >
+                  <option value="All">All Options</option>
+                  <option value="Science">Science</option>
+                  <option value="Arts">Arts</option>
+                </Select>
+              </div>
+            )}
             {filteredStudents.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[#e2e8f0] p-6 text-center text-sm text-slate-400">
                 {selectedClass
@@ -1004,7 +1033,10 @@ export default function ReportCards() {
                   >
                     <div>
                       <div className="font-medium">{student.name}</div>
-                      <div className="text-xs text-slate-400">{student.id}</div>
+                      <div className="text-xs text-slate-400">
+                        {student.id}
+                        {student.option ? ` · ${student.option}` : ""}
+                      </div>
                     </div>
                     <Badge tone="slate">Generate</Badge>
                   </button>
@@ -1096,14 +1128,14 @@ export default function ReportCards() {
       {printAll && (
         <div className="report-card-print-area absolute -left-[9999px] top-0 w-full space-y-10 p-6">
           {studentRecords.map((record) => {
-            const ranks = computeSubjectRanks(
-              record.student.id,
-              studentRecords,
-            );
             const rank = computePosition(record.student.id, studentRecords);
             const augmentedSubjects = record.subjects.map((s) => ({
               ...s,
-              rank: ranks[s.name],
+              rank: computeSubjectRanks(
+                record.student.id,
+                studentRecords,
+                s.name,
+              ),
               remark: subjectRemark(s.average),
             }));
             return (

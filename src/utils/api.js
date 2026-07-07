@@ -20,6 +20,15 @@ export async function postJson(path, data) {
   return await res.json();
 }
 
+export async function deleteJson(path) {
+  const res = await fetch(path, { method: "DELETE" });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`API error ${res.status}: ${body}`);
+  }
+  return await res.json();
+}
+
 export function getStudents() {
   return getJson("/api/students");
 }
@@ -54,4 +63,37 @@ export function getActivities() {
 
 export function logActivity(type, text) {
   return postJson("/api/activities", { type, text });
+}
+
+export function getTeachers() {
+  return getJson("/api/teachers");
+}
+
+export function addTeacher(teacher) {
+  return postJson("/api/teachers", teacher);
+}
+
+export function addTeacherAssignment(teacherId, className, subject) {
+  return postJson(`/api/teachers/${encodeURIComponent(teacherId)}/assignments`, {
+    class: className,
+    subject,
+  });
+}
+
+export function removeTeacherAssignment(teacherId, className, subject) {
+  return deleteJson(
+    `/api/teachers/${encodeURIComponent(teacherId)}/assignments?class=${encodeURIComponent(className)}&subject=${encodeURIComponent(subject)}`,
+  );
+}
+
+export function deleteTeacher(teacherId) {
+  return deleteJson(`/api/teachers/${encodeURIComponent(teacherId)}`);
+}
+
+export function getSettings() {
+  return getJson("/api/settings");
+}
+
+export function saveSettings(partial) {
+  return postJson("/api/settings", partial);
 }

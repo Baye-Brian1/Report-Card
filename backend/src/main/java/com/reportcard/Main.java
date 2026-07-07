@@ -27,6 +27,8 @@ public class Main {
         server.createContext("/api/roster", new RosterHandler());
         server.createContext("/api/marks", new MarksHandler());
         server.createContext("/api/activities", new ActivitiesHandler());
+        server.createContext("/api/teachers", new TeachersHandler());
+        server.createContext("/api/settings", new SettingsHandler());
 
         server.setExecutor(null);
         server.start();
@@ -45,20 +47,16 @@ public class Main {
 
     private static Map<String, String> parseJsonObject(String s) {
         Map<String, String> map = new HashMap<>();
-        if (s == null)
-            return map;
+        if (s == null) return map;
         s = s.trim();
-        if (s.startsWith("{"))
-            s = s.substring(1);
-        if (s.endsWith("}"))
-            s = s.substring(0, s.length() - 1);
+        if (s.startsWith("{")) s = s.substring(1);
+        if (s.endsWith("}")) s = s.substring(0, s.length() - 1);
         boolean inQuotes = false;
         StringBuilder cur = new StringBuilder();
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '"')
-                inQuotes = !inQuotes;
+            if (c == '"') inQuotes = !inQuotes;
             if (c == ',' && !inQuotes) {
                 parts.add(cur.toString());
                 cur.setLength(0);
@@ -66,12 +64,10 @@ public class Main {
                 cur.append(c);
             }
         }
-        if (cur.length() > 0)
-            parts.add(cur.toString());
+        if (cur.length() > 0) parts.add(cur.toString());
         for (String p : parts) {
             int idx = p.indexOf(':');
-            if (idx < 0)
-                continue;
+            if (idx < 0) continue;
             String k = p.substring(0, idx).trim();
             String v = p.substring(idx + 1).trim();
             k = stripQuotes(k);
@@ -83,9 +79,24 @@ public class Main {
 
     private static String stripQuotes(String s) {
         s = s.trim();
-        if (s.startsWith("\"") && s.endsWith("\""))
-            return s.substring(1, s.length() - 1);
+        if (s.startsWith("\"") && s.endsWith("\"")) return s.substring(1, s.length() - 1);
         return s;
+    }
+
+    private static Map<String, String> queryParams(HttpExchange exchange) {
+        Map<String, String> qmap = new HashMap<>();
+        String query = exchange.getRequestURI().getQuery();
+        if (query != null) {
+            for (String q : query.split("&")) {
+                int idx = q.indexOf('=');
+                if (idx > 0) {
+                    String k = q.substring(0, idx);
+                    String v = java.net.URLDecoder.decode(q.substring(idx + 1), StandardCharsets.UTF_8);
+                    qmap.put(k, v);
+                }
+            }
+        }
+        return qmap;
     }
 
     // Handlers
@@ -98,8 +109,7 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (int i = 0; i < list.size(); i++) {
-                    if (i > 0)
-                        sb.append(',');
+                    if (i > 0) sb.append(',');
                     sb.append(list.get(i).toJson());
                 }
                 sb.append(']');
@@ -116,7 +126,10 @@ public class Main {
                         obj.getOrDefault("gender", "Male"),
                         obj.getOrDefault("guardian", "—"),
                         obj.getOrDefault("phone", "—"),
-                        obj.getOrDefault("dob", "—"));
+                        obj.getOrDefault("dob", "—"),
+                        obj.getOrDefault("option", ""),
+                        obj.getOrDefault("electives", "")
+                );
                 DataStore.save(DATA_FILE);
                 sendJson(exchange, 201, s.toJson());
                 return;
@@ -133,8 +146,7 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (int i = 0; i < classes.size(); i++) {
-                    if (i > 0)
-                        sb.append(',');
+                    if (i > 0) sb.append(',');
                     sb.append(classes.get(i).toJson());
                 }
                 sb.append(']');
@@ -161,25 +173,13 @@ public class Main {
                 sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
                 return;
             }
-            String query = exchange.getRequestURI().getQuery();
-            String className = "";
-            if (query != null) {
-                for (String q : query.split("&")) {
-                    int idx = q.indexOf('=');
-                    if (idx > 0) {
-                        String k = q.substring(0, idx);
-                        String v = q.substring(idx + 1).replace("+", " ");
-                        if ("class".equalsIgnoreCase(k))
-                            className = java.net.URLDecoder.decode(v, StandardCharsets.UTF_8);
-                    }
-                }
-            }
+            Map<String, String> q = queryParams(exchange);
+            String className = q.getOrDefault("class", "");
             List<Student> roster = DataStore.getStudentsByClass(className);
             StringBuilder sb = new StringBuilder();
             sb.append('[');
             for (int i = 0; i < roster.size(); i++) {
-                if (i > 0)
-                    sb.append(',');
+                if (i > 0) sb.append(',');
                 sb.append(roster.get(i).toJson());
             }
             sb.append(']');
@@ -192,26 +192,15 @@ public class Main {
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
             if ("GET".equalsIgnoreCase(method)) {
-                String query = exchange.getRequestURI().getQuery();
-                Map<String, String> qmap = new HashMap<>();
-                if (query != null)
-                    for (String q : query.split("&")) {
-                        int idx = q.indexOf('=');
-                        if (idx > 0)
-                            qmap.put(q.substring(0, idx),
-                                    java.net.URLDecoder.decode(q.substring(idx + 1), StandardCharsets.UTF_8));
-                    }
+                Map<String, String> qmap = queryParams(exchange);
                 String cls = qmap.getOrDefault("class", "");
                 String subject = qmap.getOrDefault("subject", "");
                 String sequence = qmap.getOrDefault("sequence", "");
                 Map<String, Double> marks = DataStore.getMarks(cls, subject, sequence);
-                StringBuilder sb = new StringBuilder();
-                sb.append('{');
-                boolean first = true;
+                StringBuilder sb = new StringBuilder(); sb.append('{');
+                boolean first=true;
                 for (Map.Entry<String, Double> e : marks.entrySet()) {
-                    if (!first)
-                        sb.append(',');
-                    first = false;
+                    if (!first) sb.append(','); first=false;
                     sb.append('"').append(e.getKey()).append('"').append(':').append(e.getValue());
                 }
                 sb.append('}');
@@ -224,24 +213,20 @@ public class Main {
                 String cls = obj.getOrDefault("class", "");
                 String subject = obj.getOrDefault("subject", "");
                 String sequence = obj.getOrDefault("sequence", "");
-                // naive parse marks object inside body (look for \"marks\":{...})
                 int midx = body.indexOf("\"marks\"");
                 Map<String, Double> marks = new HashMap<>();
                 if (midx >= 0) {
                     int colon = body.indexOf(':', midx);
                     int start = body.indexOf('{', colon);
                     int end = body.indexOf('}', start);
-                    if (start > 0 && end > start) {
-                        String inner = body.substring(start + 1, end);
+                    if (start>0 && end>start) {
+                        String inner = body.substring(start+1,end);
                         for (String p : inner.split(",")) {
                             int idx = p.indexOf(':');
-                            if (idx > 0) {
-                                String k = stripQuotes(p.substring(0, idx).trim());
-                                String v = p.substring(idx + 1).trim();
-                                try {
-                                    marks.put(k, Double.parseDouble(v));
-                                } catch (Exception ex) {
-                                }
+                            if (idx>0) {
+                                String k = stripQuotes(p.substring(0,idx).trim());
+                                String v = p.substring(idx+1).trim();
+                                try { marks.put(k, Double.parseDouble(v)); } catch (Exception ex) {}
                             }
                         }
                     }
@@ -264,8 +249,7 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (int i = 0; i < list.size(); i++) {
-                    if (i > 0)
-                        sb.append(',');
+                    if (i > 0) sb.append(',');
                     sb.append(list.get(i).toJson());
                 }
                 sb.append(']');
@@ -286,115 +270,227 @@ public class Main {
         }
     }
 
+    // /api/teachers               GET  -> list all
+    // /api/teachers               POST -> create teacher {name, email, phone}
+    // /api/teachers/{id}          DELETE -> remove teacher
+    // /api/teachers/{id}/assignments  POST   -> add assignment {class, subject}
+    // /api/teachers/{id}/assignments  DELETE -> remove assignment (?class=&subject=)
+    static class TeachersHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            String[] parts = path.split("/");
+            // ["", "api", "teachers", (id), (assignments)]
+
+            if ("GET".equalsIgnoreCase(method) && parts.length == 3) {
+                List<Teacher> list = DataStore.getTeachers();
+                StringBuilder sb = new StringBuilder();
+                sb.append('[');
+                for (int i = 0; i < list.size(); i++) {
+                    if (i > 0) sb.append(',');
+                    sb.append(list.get(i).toJson());
+                }
+                sb.append(']');
+                sendJson(exchange, 200, sb.toString());
+                return;
+            }
+
+            if ("POST".equalsIgnoreCase(method) && parts.length == 3) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> obj = parseJsonObject(body);
+                Teacher t = DataStore.addTeacher(
+                        obj.getOrDefault("name", ""),
+                        obj.getOrDefault("email", "—"),
+                        obj.getOrDefault("phone", "—")
+                );
+                DataStore.save(DATA_FILE);
+                sendJson(exchange, 201, t.toJson());
+                return;
+            }
+
+            if (parts.length == 5 && "assignments".equals(parts[4])) {
+                String teacherId = parts[3];
+                if ("POST".equalsIgnoreCase(method)) {
+                    String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                    Map<String, String> obj = parseJsonObject(body);
+                    String cls = obj.getOrDefault("class", "");
+                    String subject = obj.getOrDefault("subject", "");
+                    boolean ok = DataStore.addAssignment(teacherId, cls, subject);
+                    if (!ok) { sendJson(exchange, 404, "{\"error\":\"Teacher not found\"}"); return; }
+                    DataStore.save(DATA_FILE);
+                    sendJson(exchange, 201, "{\"status\":\"ok\"}");
+                    return;
+                }
+                if ("DELETE".equalsIgnoreCase(method)) {
+                    Map<String, String> q = queryParams(exchange);
+                    String cls = q.getOrDefault("class", "");
+                    String subject = q.getOrDefault("subject", "");
+                    DataStore.removeAssignment(teacherId, cls, subject);
+                    DataStore.save(DATA_FILE);
+                    sendJson(exchange, 200, "{\"status\":\"ok\"}");
+                    return;
+                }
+            }
+
+            if (parts.length == 4 && "DELETE".equalsIgnoreCase(method)) {
+                String teacherId = parts[3];
+                DataStore.deleteTeacher(teacherId);
+                DataStore.save(DATA_FILE);
+                sendJson(exchange, 200, "{\"status\":\"ok\"}");
+                return;
+            }
+
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+        }
+    }
+
+    static class SettingsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String method = exchange.getRequestMethod();
+            if ("GET".equalsIgnoreCase(method)) {
+                sendJson(exchange, 200, DataStore.getSettings().toJson());
+                return;
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Map<String, String> obj = parseJsonObject(body);
+                SchoolSettings updated = DataStore.updateSettings(obj);
+                DataStore.save(DATA_FILE);
+                sendJson(exchange, 200, updated.toJson());
+                return;
+            }
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+        }
+    }
+
     // Data classes & store
     static class Student implements Serializable {
         private static final long serialVersionUID = 1L;
-        String id, name, className, gender, guardian, phone, dob, status;
+        String id, name, className, gender, guardian, phone, dob, option, electives, status;
 
-        Student(String id, String name, String className, String gender, String guardian, String phone, String dob) {
-            this.id = id;
-            this.name = name;
-            this.className = className;
-            this.gender = gender;
-            this.guardian = guardian;
-            this.phone = phone;
-            this.dob = dob;
-            this.status = "Active";
+        Student(String id, String name, String className, String gender, String guardian, String phone, String dob, String option, String electives) {
+            this.id = id; this.name = name; this.className = className; this.gender = gender; this.guardian = guardian; this.phone = phone; this.dob = dob; this.option = option; this.electives = electives; this.status = "Active";
         }
 
         String toJson() {
-            return String.format(Locale.ROOT,
-                    "{\"id\":\"%s\",\"name\":\"%s\",\"class\":\"%s\",\"gender\":\"%s\",\"guardian\":\"%s\",\"phone\":\"%s\",\"dob\":\"%s\",\"status\":\"%s\"}",
-                    escape(id), escape(name), escape(className), escape(gender), escape(guardian), escape(phone),
-                    escape(dob), escape(status));
+            return String.format(Locale.ROOT, "{\"id\":\"%s\",\"name\":\"%s\",\"class\":\"%s\",\"gender\":\"%s\",\"guardian\":\"%s\",\"phone\":\"%s\",\"dob\":\"%s\",\"option\":\"%s\",\"electives\":\"%s\",\"status\":\"%s\"}", escape(id), escape(name), escape(className), escape(gender), escape(guardian), escape(phone), escape(dob), escape(option), escape(electives), escape(status));
         }
 
-        private String escape(String s) {
-            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
-        }
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
     }
 
     static class ClassInfo implements Serializable {
         private static final long serialVersionUID = 1L;
-        String name;
-        String teacher;
-        Double average;
-        int students;
-
-        ClassInfo(String name) {
-            this.name = name;
-            this.teacher = "Unassigned";
-            this.average = null;
-            this.students = 0;
-        }
-
-        String toJson() {
-            return String.format(Locale.ROOT, "{\"name\":\"%s\",\"students\":%d,\"average\":%s,\"teacher\":\"%s\"}",
-                    escape(name), students, average == null ? "null" : String.format(Locale.ROOT, "%.2f", average),
-                    escape(teacher));
-        }
-
-        private String escape(String s) {
-            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
-        }
+        String name; String teacher; Double average; int students;
+        ClassInfo(String name) { this.name = name; this.teacher = "Unassigned"; this.average = null; this.students = 0; }
+        String toJson() { return String.format(Locale.ROOT, "{\"name\":\"%s\",\"students\":%d,\"average\":%s,\"teacher\":\"%s\"}", escape(name), students, average==null?"null":String.format(Locale.ROOT,"%.2f",average), escape(teacher)); }
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
     }
 
     static class ActivityEntry implements Serializable {
         private static final long serialVersionUID = 1L;
-        String type;
-        String text;
-        long timestamp;
+        String type; String text; long timestamp;
+        ActivityEntry(String type, String text, long timestamp) { this.type = type; this.text = text; this.timestamp = timestamp; }
+        String toJson() { return String.format(Locale.ROOT, "{\"type\":\"%s\",\"text\":\"%s\",\"timestamp\":%d}", escape(type), escape(text), timestamp); }
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
+    }
 
-        ActivityEntry(String type, String text, long timestamp) {
-            this.type = type;
-            this.text = text;
-            this.timestamp = timestamp;
+    static class Assignment implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String className;
+        String subject;
+        Assignment(String className, String subject) { this.className = className; this.subject = subject; }
+        String toJson() {
+            return String.format(Locale.ROOT, "{\"class\":\"%s\",\"subject\":\"%s\"}", escape(className), escape(subject));
+        }
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
+    }
+
+    static class Teacher implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String id, name, email, phone;
+        List<Assignment> assignments = new ArrayList<>();
+
+        Teacher(String id, String name, String email, String phone) {
+            this.id = id; this.name = name; this.email = email; this.phone = phone;
         }
 
         String toJson() {
-            return String.format(Locale.ROOT, "{\"type\":\"%s\",\"text\":\"%s\",\"timestamp\":%d}", escape(type),
-                    escape(text), timestamp);
+            StringBuilder assignSb = new StringBuilder("[");
+            for (int i = 0; i < assignments.size(); i++) {
+                if (i > 0) assignSb.append(',');
+                assignSb.append(assignments.get(i).toJson());
+            }
+            assignSb.append(']');
+            return String.format(Locale.ROOT, "{\"id\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"phone\":\"%s\",\"assignments\":%s}",
+                    escape(id), escape(name), escape(email), escape(phone), assignSb.toString());
         }
 
-        private String escape(String s) {
-            return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
+    }
+
+    static class SchoolSettings implements Serializable {
+        private static final long serialVersionUID = 1L;
+        String schoolName = "SCHOOL";
+        String schoolCode = "SCH";
+        String region = "North-West";
+        String motto = "";
+        String currentTerm = "Term 2";
+        String currentSequence = "Sequence 4";
+        String academicYear = "2025 – 2026";
+        String marksScale = "20";
+        boolean emailNotif = true;
+        boolean autoLock = false;
+        boolean publicResults = false;
+
+        String toJson() {
+            return String.format(Locale.ROOT,
+                "{\"schoolName\":\"%s\",\"schoolCode\":\"%s\",\"region\":\"%s\",\"motto\":\"%s\",\"currentTerm\":\"%s\",\"currentSequence\":\"%s\",\"academicYear\":\"%s\",\"marksScale\":\"%s\",\"emailNotif\":%b,\"autoLock\":%b,\"publicResults\":%b}",
+                escape(schoolName), escape(schoolCode), escape(region), escape(motto),
+                escape(currentTerm), escape(currentSequence), escape(academicYear), escape(marksScale),
+                emailNotif, autoLock, publicResults);
         }
+
+        private String escape(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
     }
 
     static class DataStore {
         private static final List<Student> students = new ArrayList<>();
         private static final List<ClassInfo> classes = new ArrayList<>();
         private static final List<ActivityEntry> activities = new ArrayList<>();
-        // marks: class -> subject -> sequence -> studentId -> mark
+        private static final List<Teacher> teachers = new ArrayList<>();
+        private static SchoolSettings settings = new SchoolSettings();
         private static final Map<String, Map<String, Map<String, Map<String, Double>>>> marks = new HashMap<>();
 
         static synchronized void load(File f) {
             if (!f.exists()) {
-                // seed default classes
-                for (String n : Arrays.asList("Form 1", "Form 2", "Form 3", "Form 4", "Form 5"))
-                    classes.add(new ClassInfo(n));
+                for (String n : Arrays.asList("Form 1","Form 2","Form 3","Form 4","Form 5","Lower Sixth","Upper Sixth")) classes.add(new ClassInfo(n));
                 return;
             }
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) {
                 Object obj = ois.readObject();
                 if (obj instanceof Map) {
-                    Map<?, ?> m = (Map<?, ?>) obj;
+                    Map<?,?> m = (Map<?,?>) obj;
                     Object s = m.get("students");
                     Object c = m.get("classes");
                     Object mk = m.get("marks");
                     Object ac = m.get("activities");
-                    students.clear();
-                    classes.clear();
-                    marks.clear();
-                    activities.clear();
-                    if (s instanceof List)
-                        students.addAll((List<Student>) s);
-                    if (c instanceof List)
-                        classes.addAll((List<ClassInfo>) c);
-                    if (mk instanceof Map)
-                        marks.putAll((Map) mk);
-                    if (ac instanceof List)
-                        activities.addAll((List<ActivityEntry>) ac);
+                    Object tc = m.get("teachers");
+                    Object st = m.get("settings");
+                    students.clear(); classes.clear(); marks.clear(); activities.clear(); teachers.clear();
+                    if (s instanceof List) students.addAll((List<Student>) s);
+                    if (c instanceof List) classes.addAll((List<ClassInfo>) c);
+                    if (mk instanceof Map) marks.putAll((Map) mk);
+                    if (ac instanceof List) activities.addAll((List<ActivityEntry>) ac);
+                    if (tc instanceof List) teachers.addAll((List<Teacher>) tc);
+                    if (st instanceof SchoolSettings) settings = (SchoolSettings) st;
+                    for (String n : Arrays.asList("Lower Sixth", "Upper Sixth")) {
+                        boolean found = false;
+                        for (ClassInfo ci : classes) if (ci.name.equals(n)) { found = true; break; }
+                        if (!found) classes.add(new ClassInfo(n));
+                    }
                 }
             } catch (Exception ex) {
                 System.err.println("Failed to load datastore: " + ex.getMessage());
@@ -408,6 +504,8 @@ public class Main {
                 m.put("classes", new ArrayList<>(classes));
                 m.put("marks", new HashMap<>(marks));
                 m.put("activities", new ArrayList<>(activities));
+                m.put("teachers", new ArrayList<>(teachers));
+                m.put("settings", settings);
                 oos.writeObject(m);
             } catch (Exception ex) {
                 System.err.println("Failed to save datastore: " + ex.getMessage());
@@ -416,7 +514,6 @@ public class Main {
 
         static synchronized void logActivity(String type, String text) {
             activities.add(0, new ActivityEntry(type, text, System.currentTimeMillis()));
-            // keep the log from growing forever
             while (activities.size() > 200) {
                 activities.remove(activities.size() - 1);
             }
@@ -426,42 +523,27 @@ public class Main {
             return new ArrayList<>(activities);
         }
 
-        static synchronized Student addStudent(String name, String className, String gender, String guardian,
-                String phone, String dob) {
+        static synchronized Student addStudent(String name, String className, String gender, String guardian, String phone, String dob, String option, String electives) {
             String id = String.format("SPX-%04d", students.size() + 1);
-            Student s = new Student(id, name, className, gender, guardian, phone, dob);
+            Student s = new Student(id, name, className, gender, guardian, phone, dob, option, electives);
             students.add(s);
-            // ensure class exists
             boolean found = false;
-            for (ClassInfo c : classes)
-                if (c.name.equals(className)) {
-                    c.students++;
-                    found = true;
-                    break;
-                }
-            if (!found)
-                classes.add(new ClassInfo(className));
+            for (ClassInfo c : classes) if (c.name.equals(className)) { c.students++; found=true; break; }
+            if (!found) classes.add(new ClassInfo(className));
             logActivity("Student", "New student enrolled — " + name + " (" + className + ")");
             return s;
         }
 
-        static synchronized List<Student> getStudents() {
-            return new ArrayList<>(students);
-        }
+        static synchronized List<Student> getStudents() { return new ArrayList<>(students); }
 
         static synchronized List<Student> getStudentsByClass(String className) {
-            if (className == null || className.isEmpty())
-                return new ArrayList<>(students);
+            if (className == null || className.isEmpty()) return new ArrayList<>(students);
             List<Student> out = new ArrayList<>();
-            for (Student s : students)
-                if (className.equals(s.className))
-                    out.add(s);
+            for (Student s : students) if (className.equals(s.className)) out.add(s);
             return out;
         }
 
-        static synchronized List<ClassInfo> getClasses() {
-            return new ArrayList<>(classes);
-        }
+        static synchronized List<ClassInfo> getClasses() { return new ArrayList<>(classes); }
 
         static synchronized ClassInfo addClass(String name) {
             ClassInfo c = new ClassInfo(name);
@@ -480,8 +562,64 @@ public class Main {
         }
 
         static synchronized Map<String, Double> getMarks(String cls, String subject, String sequence) {
-            return marks.getOrDefault(cls, Collections.emptyMap()).getOrDefault(subject, Collections.emptyMap())
-                    .getOrDefault(sequence, Collections.emptyMap());
+            return marks.getOrDefault(cls, Collections.emptyMap()).getOrDefault(subject, Collections.emptyMap()).getOrDefault(sequence, Collections.emptyMap());
+        }
+
+        static synchronized Teacher addTeacher(String name, String email, String phone) {
+            String id = String.format("TCH-%04d", teachers.size() + 1);
+            Teacher t = new Teacher(id, name, email, phone);
+            teachers.add(t);
+            logActivity("Staff", "New teacher added — " + name);
+            return t;
+        }
+
+        static synchronized List<Teacher> getTeachers() { return new ArrayList<>(teachers); }
+
+        static synchronized boolean addAssignment(String teacherId, String className, String subject) {
+            for (Teacher t : teachers) {
+                if (t.id.equals(teacherId)) {
+                    boolean exists = false;
+                    for (Assignment a : t.assignments) {
+                        if (a.className.equals(className) && a.subject.equals(subject)) { exists = true; break; }
+                    }
+                    if (!exists) {
+                        t.assignments.add(new Assignment(className, subject));
+                        logActivity("Staff", t.name + " assigned to " + subject + " (" + className + ")");
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static synchronized void removeAssignment(String teacherId, String className, String subject) {
+            for (Teacher t : teachers) {
+                if (t.id.equals(teacherId)) {
+                    t.assignments.removeIf(a -> a.className.equals(className) && a.subject.equals(subject));
+                    return;
+                }
+            }
+        }
+
+        static synchronized void deleteTeacher(String teacherId) {
+            teachers.removeIf(t -> t.id.equals(teacherId));
+        }
+
+        static synchronized SchoolSettings getSettings() { return settings; }
+
+        static synchronized SchoolSettings updateSettings(Map<String, String> fields) {
+            if (fields.containsKey("schoolName")) settings.schoolName = fields.get("schoolName");
+            if (fields.containsKey("schoolCode")) settings.schoolCode = fields.get("schoolCode");
+            if (fields.containsKey("region")) settings.region = fields.get("region");
+            if (fields.containsKey("motto")) settings.motto = fields.get("motto");
+            if (fields.containsKey("currentTerm")) settings.currentTerm = fields.get("currentTerm");
+            if (fields.containsKey("currentSequence")) settings.currentSequence = fields.get("currentSequence");
+            if (fields.containsKey("academicYear")) settings.academicYear = fields.get("academicYear");
+            if (fields.containsKey("marksScale")) settings.marksScale = fields.get("marksScale");
+            if (fields.containsKey("emailNotif")) settings.emailNotif = Boolean.parseBoolean(fields.get("emailNotif"));
+            if (fields.containsKey("autoLock")) settings.autoLock = Boolean.parseBoolean(fields.get("autoLock"));
+            if (fields.containsKey("publicResults")) settings.publicResults = Boolean.parseBoolean(fields.get("publicResults"));
+            return settings;
         }
     }
 }
