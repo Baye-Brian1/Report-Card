@@ -47,3 +47,11 @@ export function getMarks(cls, subject, sequence) {
 export function saveMarks(cls, subject, sequence, marks) {
   return postJson("/api/marks", { class: cls, subject, sequence, marks });
 }
+
+export function getActivities() {
+  return getJson("/api/activities");
+}
+
+export function logActivity(type, text) {
+  return postJson("/api/activities", { type, text });
+}

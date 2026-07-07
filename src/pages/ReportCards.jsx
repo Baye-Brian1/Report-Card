@@ -8,18 +8,19 @@ import {
   Badge,
   Select,
 } from "../components/ui";
-import { getClasses, getMarks, getRoster } from "../utils/api";
+
+import { getClasses, getMarks, getRoster, logActivity } from "../utils/api";
 import logo from "../assets/logo.jpg";
+import stamp from "../assets/stamp.webp";
 
 /* ---------- Edit these to match your actual school ---------- */
-const SCHOOL_NAME_EN = "ST. THERESE SECONDARY SCHOOL";
-const SCHOOL_TOWN = "MINDOUROU";
+const SCHOOL_NAME_EN = "NCY SECONDARY SCHOOL";
+const SCHOOL_TOWN = "BAMENDA";
 const SCHOOL_MOTTO = "Motto: Prayers – Hardwork – Discipline";
-const REGIONAL_DELEGATION = "REGIONAL DELEGATION FOR EAST";
-const SUB_DIVISION = "SUB-INSPECTORATE FOR DJA";
+const REGIONAL_DELEGATION = "REGIONAL DELEGATION FOR NORTH WEST";
+const SUB_DIVISION = "SUB-INSPECTORATE FOR BAMENDA";
 const ACADEMIC_YEAR = "2025/2026";
 const CLASS_MASTER_NAME = "—";
-const SCHOOL_TEL = "—";
 /* -------------------------------------------------------------- */
 
 const subjectRows = [
@@ -115,60 +116,294 @@ function computeSubjectRanks(studentId, records) {
 function computePosition(studentId, records) {
   const ranking = [...records].sort((a, b) => b.average - a.average);
   const idx = ranking.findIndex((r) => r.student.id === studentId);
-  return idx >= 0 ? `${idx + 1} / ${ranking.length}` : "—";
+  return idx >= 0 ? idx + 1 : null;
 }
 
-const summaryToneClasses = {
-  navy: "bg-[#1e3a8a]/10 text-[#1e3a8a]",
-  sky: "bg-[#0ea5e9]/10 text-[#0ea5e9]",
-  emerald: "bg-[#10b981]/10 text-[#10b981]",
-  amber: "bg-amber-100 text-amber-700",
-  rose: "bg-rose-100 text-rose-600",
-};
+function computeTermAverage(studentId, term, classMarksData) {
+  const sequences = termSequences[term] || [];
+  if (sequences.length === 0) return null;
+
+  let totalWeighted = 0;
+  let totalCoefficient = 0;
+  let hasAnyMark = false;
+
+  subjectRows.forEach((subject) => {
+    const marks = sequences.map((sequence) =>
+      Number(classMarksData[subject.name]?.[sequence]?.[studentId] ?? 0),
+    );
+    if (marks.some((m) => m > 0)) hasAnyMark = true;
+    const subjectAverage = marks.reduce((sum, m) => sum + m, 0) / marks.length;
+    totalWeighted += subjectAverage * subject.coefficient;
+    totalCoefficient += subject.coefficient;
+  });
+
+  if (!hasAnyMark || !totalCoefficient) return null;
+  return totalWeighted / totalCoefficient;
+}
 
 function FieldRow({ label, value }) {
   return (
     <div className="flex items-baseline gap-1.5">
-      <span className="font-semibold text-slate-600 print:text-[8.5px]">
+      <span className="font-semibold text-slate-600 print:text-[10.5px]">
         {label}:
       </span>
-      <span className="flex-1 border-b border-dotted border-slate-300 text-slate-800 print:text-[8.5px]">
+      <span className="flex-1 border-b border-dotted border-slate-300 text-slate-800 print:text-[10.5px]">
         {value || "\u00A0"}
       </span>
     </div>
   );
 }
 
-function SummaryTile({ label, value, tone }) {
+function CheckboxLine({ label, checked = false }) {
   return (
-    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-4 print:rounded-md print:p-2">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400 print:text-[7px] print:tracking-[0.15em]">
-        {label}
-      </div>
-      <div
-        className={`mt-2 inline-flex rounded-lg px-2.5 py-1 text-lg font-bold print:mt-1 print:rounded print:px-1.5 print:py-0.5 print:text-[11px] ${
-          summaryToneClasses[tone] || ""
+    <div className="flex items-center gap-1.5 py-0.5 print:py-0">
+      <span className="flex h-2.5 w-2.5 flex-shrink-0 items-center justify-center border border-slate-400 print:h-2 print:w-2">
+        {checked && (
+          <svg
+            viewBox="0 0 10 10"
+            className="h-2 w-2 text-[#1e3a8a]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+          >
+            <path
+              d="M1.5 5.2L4 7.8L8.5 2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+      <span
+        className={`text-[10px] print:text-[9px] ${
+          checked ? "font-semibold text-[#1e3a8a]" : "text-slate-700"
         }`}
       >
-        {value}
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ReportFooter({
+  term,
+  totalWeighted,
+  average,
+  rank,
+  classSize,
+  classAverage,
+  status,
+  papersSat,
+  papersPassed,
+  papersFailed,
+  termAverages,
+  finalAverage,
+}) {
+  // Class council decision, driven by the student's overall average:
+  //  - 15 and above  -> Satisfactory / Satisfaisant
+  //  - 10 up to 14.99 -> Could do better / Peut mieux faire
+  //  - below 10       -> Must work harder / Un effort s'impose
+  const councilDecision =
+    average >= 15
+      ? "satisfactory"
+      : average >= 10
+        ? "could_do_better"
+        : "must_work_harder";
+
+  const formatAvg = (value) => (value == null ? "—" : value.toFixed(2));
+
+  return (
+    <div className="space-y-2 print:space-y-1.5">
+      {/* Term summary block */}
+      <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-300 p-2.5 sm:grid-cols-[190px_1fr] print:gap-2 print:rounded-md print:border print:p-2">
+        <table className="w-full text-left text-[10px] print:text-[9px]">
+          <tbody className="divide-y divide-slate-300">
+            <tr>
+              <td className="py-0.5 pr-2 font-semibold text-slate-500">
+                Tot. Marks
+              </td>
+              <td className="py-0.5 font-mono font-semibold text-[#0f172a]">
+                {totalWeighted.toFixed(1)}
+              </td>
+            </tr>
+            <tr>
+              <td className="py-0.5 pr-2 font-semibold text-slate-500">
+                Av / Moyen
+              </td>
+              <td className="py-0.5 font-mono font-semibold text-[#0f172a]">
+                {average.toFixed(2)} / 20
+              </td>
+            </tr>
+            <tr>
+              <td className="py-0.5 pr-2 font-semibold text-slate-500">
+                Rank / Rang
+              </td>
+              <td className="py-0.5 font-mono font-semibold text-[#0f172a]">
+                {rank ?? "—"}
+              </td>
+            </tr>
+            {term !== "First Term" && termAverages && (
+              <tr>
+                <td className="py-0.5 pr-2 align-top font-semibold text-slate-500">
+                  Term Averages
+                </td>
+                <td className="py-0.5 font-mono font-semibold text-[#0f172a]">
+                  {term === "Second Term" && (
+                    <>First: {formatAvg(termAverages["First Term"])}</>
+                  )}
+                  {term === "Third Term" && (
+                    <>
+                      First: {formatAvg(termAverages["First Term"])} · Second:{" "}
+                      {formatAvg(termAverages["Second Term"])} · Third:{" "}
+                      {formatAvg(termAverages["Third Term"])}
+                    </>
+                  )}
+                </td>
+              </tr>
+            )}
+            {term === "Third Term" && finalAverage != null && (
+              <tr>
+                <td className="py-0.5 pr-2 font-semibold text-slate-500">
+                  Final Average (Year)
+                </td>
+                <td className="py-0.5 font-mono font-semibold text-emerald-700">
+                  {finalAverage.toFixed(2)} / 20
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-lg border border-slate-300 bg-[#f8fafc] p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Position
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-[#1e3a8a] print:text-[10px]">
+              {rank ?? "—"} / {classSize}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-[#f8fafc] p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Class Avg
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-[#1e3a8a] print:text-[10px]">
+              {classAverage.toFixed(2)}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-[#f8fafc] p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Status
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-[#1e3a8a] print:text-[10px]">
+              {status}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-white p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Sat
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-emerald-600 print:text-[10px]">
+              {papersSat}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-white p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Passed
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-sky-600 print:text-[10px]">
+              {papersPassed}
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-white p-1.5 text-center print:rounded print:border print:p-1.5">
+            <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-slate-400 print:text-[7px]">
+              Failed
+            </div>
+            <div className="mt-0.5 text-xs font-bold text-rose-600 print:text-[10px]">
+              {papersFailed}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* General Conduct */}
+      <div className="rounded-xl border border-slate-300 print:rounded-md print:border">
+        <div className="border-b border-slate-300 bg-[#1e3a8a] px-2.5 py-1 text-center text-[10px] font-bold uppercase tracking-wide text-white print:px-2 print:py-1 print:text-[8.5px]">
+          General Conduct / Conduite Générale
+        </div>
+        <div className="grid grid-cols-2 gap-2.5 p-2.5 print:gap-2 print:p-2">
+          <div>
+            <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500 print:text-[7.5px]">
+              Discipline
+            </div>
+            <CheckboxLine label="Dismissed / Exclu(e)" />
+            <CheckboxLine label="Warning / Avertissement" />
+            <CheckboxLine label="Serious Warning / Blâme" />
+            <CheckboxLine label="Suspension in day(s) / Exclusion" />
+            <CheckboxLine label="Absences in hours" />
+          </div>
+          <div>
+            <div className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500 print:text-[7.5px]">
+              Academic Work / Travail
+            </div>
+            <CheckboxLine label="Distinction / Félicitation" />
+            <CheckboxLine label="Credit / Encouragement" />
+            <CheckboxLine label="Honour Roll / Tableau d'Honneur" />
+            <CheckboxLine label="Dismissed / Exclu(e)" />
+            <CheckboxLine label="Warning / Avertissement" />
+          </div>
+        </div>
+      </div>
+
+      {/* Class Council Decision */}
+      <div className="rounded-xl border border-slate-300 print:rounded-md print:border">
+        <div className="border-b border-slate-300 bg-[#1e3a8a] px-2.5 py-1 text-center text-[10px] font-bold uppercase tracking-wide text-white print:px-2 print:py-1 print:text-[8.5px]">
+          Class Council Decision / Décision du Conseil de Classe
+        </div>
+        <div className="flex flex-wrap gap-x-5 p-2.5 print:gap-x-4 print:p-2">
+          <CheckboxLine
+            label="Satisfactory / Satisfaisant"
+            checked={councilDecision === "satisfactory"}
+          />
+          <CheckboxLine
+            label="Could do better / Peut mieux faire"
+            checked={councilDecision === "could_do_better"}
+          />
+          <CheckboxLine
+            label="Must work harder in / Un effort s'impose en …"
+            checked={councilDecision === "must_work_harder"}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function RemarkCard({ title, text }) {
+function RemarkCard({ title, text, showStamp = false }) {
   return (
-    <div className="rounded-3xl border border-[#e2e8f0] bg-white p-6 print:rounded-md print:p-2.5">
-      <div className="text-sm font-semibold text-[#1e3a8a] print:text-[10px]">
+    <div className="relative rounded-xl border border-slate-300 bg-white p-2.5 print:rounded-md print:border print:p-2">
+      <div className="text-xs font-semibold text-[#1e3a8a] print:text-[10px]">
         {title}
       </div>
-      <p className="mt-3 text-sm text-slate-600 print:mt-1 print:text-[9px] print:leading-snug">
+      <p className="mt-1 text-[11px] text-slate-600 print:mt-0.5 print:text-[9.5px] print:leading-snug">
         {text}
       </p>
-      <div className="mt-6 flex items-center gap-3 text-sm text-slate-400 print:mt-2 print:text-[8px]">
-        <span>Signature</span>
-        <span className="mx-1 h-px flex-1 border-t border-dashed border-[#e2e8f0]" />
-        <span>Date</span>
+      <div className="mt-2 flex items-end justify-between gap-2 print:mt-2">
+        <div className="flex flex-1 items-center gap-2 text-[10px] text-slate-400 print:text-[8.5px]">
+          <span>Signature</span>
+          <span className="h-px flex-1 border-t border-dashed border-slate-300" />
+        </div>
+        {showStamp && (
+          <img
+            src={stamp}
+            alt="School Stamp"
+            className="pointer-events-none -mb-1 h-12 w-12 flex-shrink-0 rounded-full object-contain opacity-90 print:h-12 print:w-12"
+          />
+        )}
+        <div className="flex flex-1 items-center gap-2 text-[10px] text-slate-400 print:text-[8.5px]">
+          <span className="h-px flex-1 border-t border-dashed border-slate-300" />
+          <span>Date</span>
+        </div>
       </div>
     </div>
   );
@@ -180,10 +415,16 @@ function ReportCardBody({
   term,
   reportDate,
   average,
-  position,
+  rank,
+  classSize,
   classAverage,
   status,
-  classSize,
+  totalWeighted,
+  papersSat,
+  papersPassed,
+  papersFailed,
+  termAverages,
+  finalAverage,
   className = "",
 }) {
   const sequences = termSequences[term] || [];
@@ -191,38 +432,38 @@ function ReportCardBody({
 
   return (
     <div
-      className={`report-card-sheet overflow-hidden rounded-[28px] border border-[#e2e8f0] bg-white shadow-sm print:rounded-none print:border-0 print:shadow-none ${className}`}
+      className={`report-card-sheet overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm print:rounded-none print:shadow-none ${className}`}
     >
-      <div className="h-2 w-full bg-gradient-to-r from-[#1e3a8a] via-[#0ea5e9] to-[#10b981] print:h-1" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-[#1e3a8a] via-[#0ea5e9] to-[#10b981] print:hidden" />
 
-      <div className="p-6 sm:p-8 print:p-3">
+      <div className="report-card-content p-4 sm:p-5 print:p-3">
         {/* Bilingual Cameroon-style letterhead */}
-        <div className="mb-4 grid grid-cols-1 items-stretch gap-3 border-b border-dashed border-[#e2e8f0] pb-4 sm:grid-cols-3 print:mb-2 print:gap-2 print:pb-2">
-          <div className="rounded-xl border border-[#e2e8f0] p-3 text-center text-[10.5px] leading-snug text-slate-700 print:rounded-md print:p-1.5 print:text-[7px]">
+        <div className="mb-2.5 grid grid-cols-1 items-stretch gap-2 border-b border-dashed border-slate-300 pb-2.5 sm:grid-cols-3 print:mb-2 print:gap-2 print:pb-1.5">
+          <div className="rounded-lg border border-slate-300 p-2 text-center text-[9.5px] leading-snug text-slate-700 print:rounded-md print:border print:p-1.5 print:text-[8.5px]">
             <p className="font-bold uppercase">Republic of Cameroon</p>
             <p>----------</p>
             <p>Peace – Work – Fatherland</p>
             <p>----------</p>
             <p className="font-semibold underline">{SCHOOL_NAME_EN}</p>
             <p className="font-semibold">{SCHOOL_TOWN}</p>
-            <p className="mt-1 italic text-slate-500">{SCHOOL_MOTTO}</p>
+            <p className="mt-0.5 italic text-slate-500">{SCHOOL_MOTTO}</p>
           </div>
 
-          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center print:py-0.5">
+          <div className="flex flex-col items-center justify-center gap-0.5 py-1 text-center print:py-0">
             <img
               src={logo}
               alt="School Logo"
-              style={{ width: "100px", borderRadius: "50%" }}
+              className="h-14 w-14 rounded-full object-cover print:h-14 print:w-14"
             />
-            <h1 className="mt-1 text-base font-bold uppercase tracking-tight text-[#0f172a] print:mt-0.5 print:text-[10px]">
+            <h1 className="mt-0.5 text-sm font-bold uppercase tracking-tight text-[#0f172a] print:mt-0.5 print:text-[11px]">
               {termTitle}
             </h1>
-            <p className="text-xs text-slate-500 print:text-[7px]">
+            <p className="text-[10px] text-slate-500 print:text-[8.5px]">
               Academic Year {ACADEMIC_YEAR}
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#e2e8f0] p-3 text-center text-[10.5px] leading-snug text-slate-700 print:rounded-md print:p-1.5 print:text-[7px]">
+          <div className="rounded-lg border border-slate-300 p-2 text-center text-[9.5px] leading-snug text-slate-700 print:rounded-md print:border print:p-1.5 print:text-[8.5px]">
             <p className="font-bold uppercase">République du Cameroun</p>
             <p>----------</p>
             <p>Paix – Travail – Patrie</p>
@@ -238,7 +479,7 @@ function ReportCardBody({
         </div>
 
         {/* Identification fields */}
-        <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-3 print:mb-2 print:gap-x-4 print:gap-y-0.5 print:text-[8.5px]">
+        <div className="mb-2.5 grid grid-cols-1 gap-x-5 gap-y-1 text-xs sm:grid-cols-3 print:mb-2 print:gap-x-4 print:gap-y-0.5 print:text-[9.5px]">
           <FieldRow label="Full Name" value={student.name} />
           <FieldRow label="Student ID" value={student.id} />
           <FieldRow label="Class" value={student.class} />
@@ -248,76 +489,76 @@ function ReportCardBody({
         </div>
 
         {/* Subjects table */}
-        <div className="mb-4 overflow-x-auto rounded-2xl border border-[#e2e8f0] print:mb-2 print:overflow-visible print:rounded-md">
-          <table className="w-full min-w-[900px] text-left text-sm print:min-w-0 print:text-[8.5px]">
+        <div className="mb-2.5 overflow-x-auto rounded-xl border border-slate-300 print:mb-2 print:overflow-visible print:rounded-md print:border">
+          <table className="w-full min-w-[900px] border-collapse text-left text-xs print:min-w-0 print:text-[10px]">
             <thead>
               <tr className="bg-[#1e3a8a] text-white">
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Subject
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Coef.
                 </th>
                 {sequences.map((sequence) => (
                   <th
                     key={sequence}
-                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]"
+                    className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]"
                   >
                     {sequence}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Average
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Teacher
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Rank
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Grade
                 </th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide print:px-1.5 print:py-1 print:text-[7px]">
+                <th className="border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide print:px-2 print:py-1 print:text-[8.5px]">
                   Remark
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e2e8f0] bg-white">
+            <tbody className="bg-white">
               {subjects.map((subject, i) => (
                 <tr
                   key={subject.name}
                   className={i % 2 === 0 ? "bg-white" : "bg-[#f8fafc]"}
                 >
-                  <td className="px-4 py-3 font-medium text-[#1e3a8a] print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 font-medium text-[#1e3a8a] print:px-2 print:py-0.5">
                     {subject.name}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 text-slate-600 print:px-2 print:py-0.5">
                     {subject.coefficient}
                   </td>
                   {subject.marks.map((mark, idx) => (
                     <td
                       key={idx}
-                      className="px-4 py-3 font-mono text-slate-600 print:px-1.5 print:py-0.5"
+                      className="border border-slate-300 px-3 py-1.5 font-mono text-slate-600 print:px-2 print:py-0.5"
                     >
                       {mark > 0 ? mark.toFixed(1) : "—"}
                     </td>
                   ))}
-                  <td className="px-4 py-3 font-mono font-semibold text-[#0f172a] print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 font-mono font-semibold text-[#0f172a] print:px-2 print:py-0.5">
                     {subject.average > 0 ? subject.average.toFixed(2) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 text-slate-600 print:px-2 print:py-0.5">
                     {subject.teacher}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 text-slate-600 print:px-2 print:py-0.5">
                     {subject.rank}
                   </td>
-                  <td className="px-4 py-3 print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 print:px-2 print:py-0.5">
                     <Badge tone={subject.grade?.tone || "slate"}>
                       {subject.grade?.label || "—"}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 print:px-1.5 print:py-0.5">
+                  <td className="border border-slate-300 px-3 py-1.5 text-slate-500 print:px-2 print:py-0.5">
                     {subject.remark}
                   </td>
                 </tr>
@@ -326,34 +567,23 @@ function ReportCardBody({
           </table>
         </div>
 
-        {/* Bottom tiles */}
-        <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:mb-2 print:gap-1.5">
-          <SummaryTile
-            label="Student Average"
-            value={average.toFixed(2)}
-            tone="navy"
-          />
-          <SummaryTile label="Overall Position" value={position} tone="sky" />
-          <SummaryTile
-            label="Class Average"
-            value={classAverage.toFixed(2)}
-            tone="emerald"
-          />
-          <SummaryTile
-            label="Result Status"
-            value={status}
-            tone={
-              status === "Pass"
-                ? "emerald"
-                : status === "Trial"
-                  ? "amber"
-                  : "rose"
-            }
-          />
-        </div>
+        <ReportFooter
+          term={term}
+          totalWeighted={totalWeighted}
+          average={average}
+          rank={rank}
+          classSize={classSize}
+          classAverage={classAverage}
+          status={status}
+          papersSat={papersSat}
+          papersPassed={papersPassed}
+          papersFailed={papersFailed}
+          termAverages={termAverages}
+          finalAverage={finalAverage}
+        />
 
-        {/* Remarks */}
-        <div className="grid grid-cols-2 gap-4 print:gap-1.5">
+        {/* Remarks — stamp sits on the Principal's signature line */}
+        <div className="mt-2.5 grid grid-cols-2 gap-2.5 print:mt-2 print:gap-2">
           <RemarkCard
             title="Class Master's Remarks"
             text="Well done. Keep working hard, and aim for consistency across all subjects."
@@ -361,6 +591,7 @@ function ReportCardBody({
           <RemarkCard
             title="Principal's Remarks"
             text="Good performance. Maintain discipline and continue improving in the next term."
+            showStamp
           />
         </div>
       </div>
@@ -403,13 +634,17 @@ export default function ReportCards() {
     if (!selectedClass) return;
 
     let active = true;
-    const sequences = termSequences[term] || [];
+    // Fetch every sequence across all three terms (not just the one
+    // currently selected) so we can always compute First/Second/Third
+    // term averages for the summary row, regardless of which term the
+    // person is viewing.
+    const allSequences = Object.values(termSequences).flat();
 
     const loadMarks = async () => {
       try {
         const results = await Promise.all(
           subjectRows.flatMap((subject) =>
-            sequences.map((sequence) =>
+            allSequences.map((sequence) =>
               getMarks(selectedClass, subject.name, sequence).then((marks) => ({
                 subject: subject.name,
                 sequence,
@@ -438,7 +673,7 @@ export default function ReportCards() {
     return () => {
       active = false;
     };
-  }, [selectedClass, term]);
+  }, [selectedClass]);
 
   useEffect(() => {
     if (!printAll) return;
@@ -490,9 +725,18 @@ export default function ReportCards() {
         (acc, item) => acc + item.coefficient,
         0,
       );
+      const papersSat = subjects.filter((s) => s.average > 0).length;
+      const papersPassed = subjects.filter((s) => s.average >= 10).length;
+      const papersFailed = subjects.filter(
+        (s) => s.average > 0 && s.average < 10,
+      ).length;
       return {
         student,
         subjects,
+        totalWeighted,
+        papersSat,
+        papersPassed,
+        papersFailed,
         average: totalCoefficient ? totalWeighted / totalCoefficient : 0,
       };
     });
@@ -516,11 +760,11 @@ export default function ReportCards() {
     );
   }, [studentRecords]);
 
-  const selectedPosition = useMemo(
+  const selectedRank = useMemo(
     () =>
       selectedRecord
         ? computePosition(selectedRecord.student.id, studentRecords)
-        : "—",
+        : null,
     [selectedRecord, studentRecords],
   );
 
@@ -537,14 +781,63 @@ export default function ReportCards() {
     }));
   }, [selectedRecord, studentRecords]);
 
+  // Each student's average for every term, independent of whichever term
+  // is currently selected in the dropdown — needed so the "Term Averages"
+  // row can show prior terms (e.g. First Term while viewing Second Term).
+  const termAveragesByStudent = useMemo(() => {
+    const map = {};
+    students.forEach((student) => {
+      map[student.id] = {
+        "First Term": computeTermAverage(student.id, "First Term", classMarks),
+        "Second Term": computeTermAverage(
+          student.id,
+          "Second Term",
+          classMarks,
+        ),
+        "Third Term": computeTermAverage(student.id, "Third Term", classMarks),
+      };
+    });
+    return map;
+  }, [students, classMarks]);
+
+  function getTermAverages(studentId) {
+    return (
+      termAveragesByStudent[studentId] || {
+        "First Term": null,
+        "Second Term": null,
+        "Third Term": null,
+      }
+    );
+  }
+
+  function getFinalAverage(studentId) {
+    const {
+      "First Term": first,
+      "Second Term": second,
+      "Third Term": third,
+    } = getTermAverages(studentId);
+    if (first == null || second == null || third == null) return null;
+    return (first + second + third) / 3;
+  }
+
   const reportDate = formatDate(new Date());
 
   function handlePrint() {
+    if (selectedStudent) {
+      logActivity(
+        "Report Card",
+        `Report card generated — ${selectedStudent.name} (${selectedClass})`,
+      ).catch(() => {});
+    }
     window.print();
   }
 
   function handlePrintAll() {
     if (!studentRecords.length) return;
+    logActivity(
+      "Report Card",
+      `Report cards generated — ${selectedClass} (${studentRecords.length} students)`,
+    ).catch(() => {});
     setPrintAll(true);
   }
 
@@ -552,21 +845,63 @@ export default function ReportCards() {
     <>
       <style>{`
         @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
           @page {
             size: A4;
-            margin: 8mm;
+            margin: 6mm;
           }
           html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             height: auto !important;
           }
-          body * { visibility: hidden; }
-          .report-card-print-area, .report-card-print-area * { visibility: visible; }
+
+          /* Isolate the report card for printing.
+             Everything on the page is hidden by default, then only the
+             print area (and everything inside it) is revealed again. This
+             reliably hides ANY surrounding chrome — navbar, breadcrumbs,
+             sidebar, search bar — even though that chrome lives in a parent
+             layout component this file doesn't control, and even if that
+             parent never applies a "print:hidden" class of its own. */
+          body * {
+            visibility: hidden !important;
+          }
+          .report-card-print-area,
+          .report-card-print-area * {
+            visibility: visible !important;
+          }
+
           .report-card-print-area {
-            position: static !important;
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
+
+          /* Stretch each sheet to fill most of the printable A4 area (297mm
+             tall, minus the two 6mm @page margins = 285mm), but stop a bit
+             short of that ceiling on purpose. Matching it exactly risks a
+             sub-millimeter rounding/border overflow that silently spills a
+             near-blank second page — this buffer keeps everything safely
+             on one sheet while still spreading content to fill it. */
+          .report-card-sheet {
+            min-height: 268mm;
+            display: flex;
+            flex-direction: column;
+          }
+          .report-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+
           .report-card-page {
             page-break-after: always;
             break-after: page;
@@ -578,11 +913,6 @@ export default function ReportCards() {
           .report-card-sheet {
             page-break-inside: avoid;
             break-inside: avoid;
-            width: 100%;
-            height: 100%;
-            max-height: 100vh;
-            display: flex;
-            flex-direction: column;
           }
           .report-card-sheet table {
             page-break-inside: avoid;
@@ -591,23 +921,25 @@ export default function ReportCards() {
         }
       `}</style>
 
-      <PageHeading
-        title="Report Cards"
-        subtitle="Choose a class and generate a printable report card for any student."
-        action={
-          <Button
-            icon={Layers}
-            variant="outline"
-            onClick={handlePrintAll}
-            disabled={!selectedClass || !studentRecords.length}
-          >
-            Print All — {selectedClass || "Select a class"}
-          </Button>
-        }
-      />
+      <div className="print:hidden">
+        <PageHeading
+          title="Report Cards"
+          subtitle="Choose a class and generate a printable report card for any student."
+          action={
+            <Button
+              icon={Layers}
+              variant="outline"
+              onClick={handlePrintAll}
+              disabled={!selectedClass || !studentRecords.length}
+            >
+              Print All — {selectedClass || "Select a class"}
+            </Button>
+          }
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr]">
-        <div className="space-y-6">
+        <div className="space-y-6 print:hidden">
           <Card>
             <CardHeader
               title="Classes"
@@ -683,44 +1015,50 @@ export default function ReportCards() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader
-              title="Report card preview"
-              subtitle={
-                selectedStudent
-                  ? "Ready to print or save."
-                  : "Choose a student to generate the report card."
-              }
-            />
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-sm text-slate-500">Selected Class</div>
-                <div className="text-lg font-semibold text-[#1e3a8a]">
-                  {selectedClass || "None"}
+          <Card className="print:rounded-none print:border-0 print:p-0 print:shadow-none">
+            <div className="print:hidden">
+              <CardHeader
+                title="Report card preview"
+                subtitle={
+                  selectedStudent
+                    ? "Ready to print or save."
+                    : "Choose a student to generate the report card."
+                }
+              />
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-sm text-slate-500">Selected Class</div>
+                  <div className="text-lg font-semibold text-[#1e3a8a]">
+                    {selectedClass || "None"}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Select
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
+                    className="max-w-[180px]"
+                  >
+                    {Object.keys(termSequences).map((termName) => (
+                      <option key={termName}>{termName}</option>
+                    ))}
+                  </Select>
+                  <Button
+                    variant="outline"
+                    icon={Printer}
+                    onClick={handlePrint}
+                  >
+                    Print
+                  </Button>
+                  <Button icon={FileDown} onClick={handlePrint}>
+                    Download PDF
+                  </Button>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Select
-                  value={term}
-                  onChange={(e) => setTerm(e.target.value)}
-                  className="max-w-[180px]"
-                >
-                  {Object.keys(termSequences).map((termName) => (
-                    <option key={termName}>{termName}</option>
-                  ))}
-                </Select>
-                <Button variant="outline" icon={Printer} onClick={handlePrint}>
-                  Print
-                </Button>
-                <Button icon={FileDown} onClick={handlePrint}>
-                  Download PDF
-                </Button>
-              </div>
+              {error && <p className="text-sm text-rose-500">{error}</p>}
             </div>
-            {error && <p className="text-sm text-rose-500">{error}</p>}
 
             {!selectedStudent ? (
-              <div className="rounded-xl border border-dashed border-[#e2e8f0] p-6 text-center text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-[#e2e8f0] p-6 text-center text-sm text-slate-400 print:hidden">
                 Pick a student to view the full report card.
               </div>
             ) : (
@@ -731,12 +1069,24 @@ export default function ReportCards() {
                 term={term}
                 reportDate={reportDate}
                 average={selectedRecord ? selectedRecord.average : 0}
-                position={selectedPosition}
+                rank={selectedRank}
+                classSize={students.length}
                 classAverage={classAverage}
                 status={
                   selectedRecord ? getStatus(selectedRecord.average) : "—"
                 }
-                classSize={students.length}
+                totalWeighted={
+                  selectedRecord ? selectedRecord.totalWeighted : 0
+                }
+                papersSat={selectedRecord ? selectedRecord.papersSat : 0}
+                papersPassed={selectedRecord ? selectedRecord.papersPassed : 0}
+                papersFailed={selectedRecord ? selectedRecord.papersFailed : 0}
+                termAverages={
+                  selectedStudent ? getTermAverages(selectedStudent.id) : null
+                }
+                finalAverage={
+                  selectedStudent ? getFinalAverage(selectedStudent.id) : null
+                }
               />
             )}
           </Card>
@@ -750,7 +1100,7 @@ export default function ReportCards() {
               record.student.id,
               studentRecords,
             );
-            const pos = computePosition(record.student.id, studentRecords);
+            const rank = computePosition(record.student.id, studentRecords);
             const augmentedSubjects = record.subjects.map((s) => ({
               ...s,
               rank: ranks[s.name],
@@ -764,10 +1114,16 @@ export default function ReportCards() {
                   term={term}
                   reportDate={reportDate}
                   average={record.average}
-                  position={pos}
+                  rank={rank}
+                  classSize={students.length}
                   classAverage={classAverage}
                   status={getStatus(record.average)}
-                  classSize={students.length}
+                  totalWeighted={record.totalWeighted}
+                  papersSat={record.papersSat}
+                  papersPassed={record.papersPassed}
+                  papersFailed={record.papersFailed}
+                  termAverages={getTermAverages(record.student.id)}
+                  finalAverage={getFinalAverage(record.student.id)}
                 />
               </div>
             );
