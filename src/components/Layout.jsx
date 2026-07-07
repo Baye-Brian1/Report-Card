@@ -15,6 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 import { focusRing } from "./ui";
+import logo from "../assets/logo.jpg";
 
 export const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -69,9 +70,11 @@ export default function Layout() {
         {/* ---------- Sidebar ---------- */}
         <aside className="hidden w-64 flex-shrink-0 flex-col bg-gradient-to-b from-[#1e3a8a] to-[#1d4ed8] shadow-xl lg:flex">
           <div className="flex items-center gap-3 px-6 py-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#0ea5e9] bg-[#1e3a8a] shadow-[0_0_0_4px_rgba(14,165,233,0.12)]">
-              <Shield size={20} className="text-[#0ea5e9]" strokeWidth={2} />
-            </div>
+            <img
+              src={logo}
+              alt="School logo"
+              style={{ borderRadius: "50%", width: "50px" }}
+            />
             <div>
               <div className="text-lg font-bold leading-tight tracking-tight text-white">
                 SCHOOL
