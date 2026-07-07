@@ -8,57 +8,37 @@ import {
   Label,
   Select,
 } from "../components/ui";
-import { getClasses, getRoster, saveMarks, getMarks } from "../utils/api";
+import {
+  getClasses,
+  getRoster,
+  saveMarks,
+  getMarks,
+  getSettings,
+  getTeachers,
+} from "../utils/api";
+import {
+  getSubjectsForStudent,
+  getTeacherName,
+  requiresStream,
+} from "../utils/subjects";
 
-const subjectRows = [
-  { name: "English Language", coefficient: 5 },
-  { name: "French Language", coefficient: 5 },
-  { name: "Mathematics", coefficient: 5 },
-  { name: "Geography", coefficient: 3 },
-  { name: "Physics", coefficient: 3 },
-  { name: "Chemistry", coefficient: 3 },
-  { name: "Biology", coefficient: 3 },
-  { name: "History", coefficient: 3 },
-  { name: "Literature in English", coefficient: 3 },
-  { name: "Computer Science", coefficient: 3 },
-  { name: "Sports", coefficient: 1 },
-  { name: "Manual Labour", coefficient: 1 },
-  { name: "Citizenship", coefficient: 3 },
-  { name: "Food and Nutrition", coefficient: 3 },
-  { name: "Sound and Word Building", coefficient: 3 },
-];
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],
   "Second Term": ["Sequence 3", "Sequence 4"],
   "Third Term": ["Sequence 5", "Sequence 6"],
 };
 const terms = Object.keys(termSequences);
-const teacherAssignments = {
-  "English Language": "Mrs. Ekema Grace",
-  "French Language": "Mr. Njoh Divine",
-  Mathematics: "Mr. Njoh Divine",
-  Geography: "Mrs. Ekema Grace",
-  Physics: "Mr. Njoh Divine",
-  Chemistry: "Mrs. Ekema Grace",
-  Biology: "Mrs. Ekema Grace",
-  History: "Mrs. Ekema Grace",
-  "Literature in English": "Mrs. Ekema Grace",
-  "Computer Science": "Mr. Njoh Divine",
-  Sports: "Mr. Njoh Divine",
-  "Manual Labour": "Mrs. Ekema Grace",
-  Citizenship: "Mr. Njoh Divine",
-  "Food and Nutrition": "Mrs. Ekema Grace",
-  "Sound and Word Building": "Mrs. Ekema Grace",
-};
 
 export default function MarksEntry() {
   const [classes, setClasses] = useState([]);
   const [cls, setCls] = useState("");
+  const [optionFilter, setOptionFilter] = useState("All");
   const [student, setStudent] = useState("");
   const [term, setTerm] = useState("Second Term");
   const [sequence, setSequence] = useState(termSequences["Second Term"][0]);
   const [marks, setMarks] = useState({});
   const [roster, setRoster] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,6 +50,27 @@ export default function MarksEntry() {
         if (list.length > 0) setCls(list[0]);
       })
       .catch((err) => setError(err.message));
+
+    getTeachers()
+      .then(setTeachers)
+      .catch((err) => setError(err.message));
+
+    // Default to whatever the school has set as the current term/sequence.
+    getSettings()
+      .then((settings) => {
+        if (termSequences[settings.currentTerm]) {
+          setTerm(settings.currentTerm);
+          const validSequences = termSequences[settings.currentTerm];
+          setSequence(
+            validSequences.includes(settings.currentSequence)
+              ? settings.currentSequence
+              : validSequences[0],
+          );
+        }
+      })
+      .catch(() => {
+        // If settings can't be loaded, just keep the built-in default.
+      });
   }, []);
 
   useEffect(() => {
@@ -79,16 +80,27 @@ export default function MarksEntry() {
       .catch((err) => setError(err.message));
   }, [cls]);
 
-  // Load marks for the selected student/sequence when they change
+  const streamed = requiresStream(cls);
+
+  const filteredRoster =
+    streamed && optionFilter !== "All"
+      ? roster.filter((s) => s.option === optionFilter)
+      : roster;
+
+  const selectedStudentRecord =
+    filteredRoster.find((s) => s.id === student) || null;
+  const subjectRows = selectedStudentRecord
+    ? getSubjectsForStudent(selectedStudentRecord)
+    : [];
+
   useEffect(() => {
-    if (!student || !sequence || !cls) return;
+    if (!student || !sequence || !cls || subjectRows.length === 0) return;
 
     const loadMarksForStudent = async () => {
       try {
         const allMarks = {};
         for (const subject of subjectRows) {
           const subjectMarks = await getMarks(cls, subject.name, sequence);
-          // subjectMarks is an object like { "student-id": 15.5 }
           if (subjectMarks[student]) {
             allMarks[subject.name] = String(subjectMarks[student]);
           }
@@ -100,6 +112,7 @@ export default function MarksEntry() {
     };
 
     loadMarksForStudent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student, sequence, cls]);
 
   async function handleSave(e) {
@@ -111,7 +124,6 @@ export default function MarksEntry() {
       return;
     }
     try {
-      // Save marks for each subject for the selected student
       for (const subject of Object.keys(marks)) {
         const mark = marks[subject];
         if (mark !== "" && mark !== null) {
@@ -137,19 +149,46 @@ export default function MarksEntry() {
           title="Enter Academic Results"
           subtitle="Fill marks for each subject and save them per sequence."
         />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          className={`grid gap-4 sm:grid-cols-2 ${
+            streamed ? "lg:grid-cols-5" : "lg:grid-cols-4"
+          }`}
+        >
           <div>
             <Label htmlFor="cls">Class</Label>
             <Select
               id="cls"
               value={cls}
-              onChange={(e) => setCls(e.target.value)}
+              onChange={(e) => {
+                setCls(e.target.value);
+                setOptionFilter("All");
+                setStudent("");
+              }}
             >
               {classes.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </Select>
           </div>
+
+          {streamed && (
+            <div>
+              <Label htmlFor="option">Option</Label>
+              <Select
+                id="option"
+                value={optionFilter}
+                onChange={(e) => {
+                  setOptionFilter(e.target.value);
+                  setStudent("");
+                }}
+              >
+                <option value="All">All</option>
+                <option value="Science">Science</option>
+                <option value="Arts">Arts</option>
+              </Select>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="student">Student</Label>
             <Select
@@ -158,9 +197,9 @@ export default function MarksEntry() {
               onChange={(e) => setStudent(e.target.value)}
             >
               <option value="">-- Select a student --</option>
-              {roster.map((s) => (
+              {filteredRoster.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({s.id})
+                  {s.name} ({s.id}){s.option ? ` — ${s.option}` : ""}
                 </option>
               ))}
             </Select>
@@ -199,7 +238,13 @@ export default function MarksEntry() {
       <Card className="mt-6">
         <CardHeader
           title={`${cls}${cls ? " · " + term + " · " + sequence : ""}`}
-          subtitle={`${roster.length} student${roster.length === 1 ? "" : "s"} in this class`}
+          subtitle={`${filteredRoster.length} student${
+            filteredRoster.length === 1 ? "" : "s"
+          } ${
+            streamed && optionFilter !== "All"
+              ? `(${optionFilter}) in this class`
+              : "in this class"
+          }`}
           action={
             saved && (
               <span className="flex items-center gap-1 text-sm font-medium text-[#10b981]">
@@ -211,10 +256,11 @@ export default function MarksEntry() {
 
         {error && <p className="mb-4 text-sm text-rose-500">{error}</p>}
 
-        {roster.length === 0 ? (
+        {filteredRoster.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[#e2e8f0] py-10 text-center text-sm text-slate-400">
-            No students enrolled in {cls} yet. Add students from the Student
-            Entry page first.
+            {roster.length === 0
+              ? `No students enrolled in ${cls} yet. Add students from the Student Entry page first.`
+              : `No ${optionFilter} students in ${cls} yet.`}
           </div>
         ) : !student ? (
           <div className="rounded-xl border border-dashed border-[#e2e8f0] py-10 text-center text-sm text-slate-400">
@@ -243,7 +289,11 @@ export default function MarksEntry() {
                 <tbody className="divide-y divide-[#e2e8f0]">
                   {subjectRows.map((subject, idx) => {
                     const mark = marks[subject.name] ?? "";
-                    const teacher = teacherAssignments[subject.name] || "—";
+                    const teacherName = getTeacherName(
+                      teachers,
+                      cls,
+                      subject.name,
+                    );
                     return (
                       <tr
                         key={idx}
@@ -255,7 +305,9 @@ export default function MarksEntry() {
                         <td className="px-4 py-3 text-slate-600">
                           {subject.coefficient}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{teacher}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {teacherName}
+                        </td>
                         <td className="px-4 py-3">
                           <input
                             type="number"
