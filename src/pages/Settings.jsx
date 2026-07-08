@@ -8,6 +8,7 @@ import {
   UserPlus,
   X,
   Plus,
+  GraduationCap,
 } from "lucide-react";
 import {
   Card,
@@ -27,6 +28,8 @@ import {
   addTeacherAssignment,
   removeTeacherAssignment,
   deleteTeacher,
+  getClasses,
+  assignClassMaster,
 } from "../utils/api";
 import { CLASS_NAMES, ALL_SUBJECTS } from "../utils/subjects";
 
@@ -71,8 +74,12 @@ export default function Settings() {
     schoolName: "",
     schoolCode: "",
     region: "",
+    schoolTown: "",
+    regionalDelegation: "",
+    subDivision: "",
     motto: "",
   });
+
   const [structure, setStructure] = useState({
     currentTerm: "Term 2",
     currentSequence: "Sequence 4",
@@ -92,15 +99,21 @@ export default function Settings() {
   const [savingTeacher, setSavingTeacher] = useState(false);
   const [assignDraft, setAssignDraft] = useState({}); // { [teacherId]: { class, subject } }
 
+  const [classes, setClasses] = useState([]);
+
   useEffect(() => {
-    Promise.all([getSettings(), getTeachers()])
-      .then(([settings, teacherList]) => {
+    Promise.all([getSettings(), getTeachers(), getClasses()])
+      .then(([settings, teacherList, classList]) => {
         setSchoolInfo({
           schoolName: settings.schoolName,
           schoolCode: settings.schoolCode,
           region: settings.region,
+          schoolTown: settings.schoolTown,
+          regionalDelegation: settings.regionalDelegation,
+          subDivision: settings.subDivision,
           motto: settings.motto,
         });
+
         setStructure({
           currentTerm: settings.currentTerm,
           currentSequence: settings.currentSequence,
@@ -111,6 +124,7 @@ export default function Settings() {
         setAutoLock(settings.autoLock);
         setPublicResults(settings.publicResults);
         setTeachers(teacherList);
+        setClasses(classList);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -229,6 +243,25 @@ export default function Settings() {
     try {
       await deleteTeacher(teacherId);
       setTeachers((prev) => prev.filter((t) => t.id !== teacherId));
+      setClasses((prev) =>
+        prev.map((c) =>
+          c.classMasterId === teacherId
+            ? { ...c, classMasterId: null, teacher: "Unassigned" }
+            : c,
+        ),
+      );
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleAssignClassMaster(className, teacherId) {
+    if (!teacherId) return;
+    try {
+      const updated = await assignClassMaster(className, teacherId);
+      setClasses((prev) =>
+        prev.map((c) => (c.name === className ? updated : c)),
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -300,6 +333,55 @@ export default function Settings() {
               </div>
             </div>
             <div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="schoolTown">School Town</Label>
+                  <Input
+                    id="schoolTown"
+                    placeholder="e.g. Bamenda"
+                    value={schoolInfo.schoolTown}
+                    onChange={(e) =>
+                      setSchoolInfo((s) => ({
+                        ...s,
+                        schoolTown: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="regionalDelegation">
+                    Regional Delegation
+                  </Label>
+                  <Input
+                    id="regionalDelegation"
+                    placeholder="e.g. Regional Delegation for North West"
+                    value={schoolInfo.regionalDelegation}
+                    onChange={(e) =>
+                      setSchoolInfo((s) => ({
+                        ...s,
+                        regionalDelegation: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="subDivision">
+                  Sub-Division / Sub-Inspectorate
+                </Label>
+                <Input
+                  id="subDivision"
+                  placeholder="e.g. Sub-Inspectorate for Bamenda"
+                  value={schoolInfo.subDivision}
+                  onChange={(e) =>
+                    setSchoolInfo((s) => ({
+                      ...s,
+                      subDivision: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
               <Label htmlFor="motto">Motto</Label>
               <Input
                 id="motto"
@@ -625,6 +707,52 @@ export default function Settings() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      {/* Class Masters */}
+      <Card className="mt-6">
+        <CardHeader
+          title="Class Masters"
+          subtitle="Assign a Class Master to each class — shown on that class's report cards."
+          action={<GraduationCap size={18} className="text-slate-300" />}
+        />
+        {classes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-400">
+            No classes found yet.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {classes.map((c) => (
+              <div
+                key={c.name}
+                className="flex flex-col gap-2 rounded-lg border border-[#e2e8f0] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <div className="text-sm font-medium text-[#1e3a8a]">
+                    {c.name}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Current: {c.teacher || "Unassigned"}
+                  </div>
+                </div>
+                <Select
+                  value={c.classMasterId || ""}
+                  onChange={(e) =>
+                    handleAssignClassMaster(c.name, e.target.value)
+                  }
+                  className="sm:max-w-[220px]"
+                >
+                  <option value="">-- Select a teacher --</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ))}
           </div>
         )}
       </Card>

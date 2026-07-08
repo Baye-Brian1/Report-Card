@@ -17,6 +17,11 @@ import {
   getTeachers,
   getSettings,
 } from "../utils/api";
+import {
+  gradeForScale,
+  statusForScale,
+  remarkForScale,
+} from "../utils/grading";
 import logo from "../assets/logo.jpg";
 import stamp from "../assets/stamp.webp";
 import {
@@ -24,15 +29,6 @@ import {
   getTeacherName,
   requiresStream,
 } from "../utils/subjects";
-/* ---------- Edit these to match your actual school ---------- */
-const SCHOOL_NAME_EN = "NCY SECONDARY SCHOOL";
-const SCHOOL_TOWN = "BAMENDA";
-const SCHOOL_MOTTO = "Motto: Prayers – Hardwork – Discipline";
-const REGIONAL_DELEGATION = "REGIONAL DELEGATION FOR NORTH WEST";
-const SUB_DIVISION = "SUB-INSPECTORATE FOR BAMENDA";
-const ACADEMIC_YEAR = "2025/2026";
-const CLASS_MASTER_NAME = "—";
-/* -------------------------------------------------------------- */
 
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],
@@ -40,36 +36,12 @@ const termSequences = {
   "Third Term": ["Sequence 5", "Sequence 6"],
 };
 
-function grade(mark) {
-  if (mark === "" || mark === null || Number.isNaN(Number(mark))) return null;
-  const n = Number(mark);
-  if (n >= 16) return { label: "A", tone: "emerald" };
-  if (n >= 12) return { label: "B", tone: "sky" };
-  if (n >= 10) return { label: "C", tone: "amber" };
-  return { label: "D", tone: "rose" };
-}
-
-function subjectRemark(average) {
-  if (average >= 16) return "Excellent";
-  if (average >= 14) return "Very Good";
-  if (average >= 12) return "Good";
-  if (average >= 10) return "Fair";
-  if (average >= 8) return "Weak";
-  return "Poor";
-}
-
 function formatDate(date) {
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
-}
-
-function getStatus(average) {
-  if (average >= 10) return "Pass";
-  if (average >= 8) return "Trial";
-  return "Fail";
 }
 
 function computeSubjectRanks(studentId, records, subjectName) {
@@ -174,6 +146,7 @@ function ReportFooter({
   papersFailed,
   termAverages,
   finalAverage,
+  marksScale,
 }) {
   // Class council decision, driven by the student's overall average:
   //  - 15 and above  -> Satisfactory / Satisfaisant
@@ -207,7 +180,7 @@ function ReportFooter({
                 Av / Moyen
               </td>
               <td className="py-0.5 font-mono font-semibold text-[#0f172a]">
-                {average.toFixed(2)} / 20
+                {average.toFixed(2)} / {marksScale}
               </td>
             </tr>
             <tr>
@@ -243,7 +216,7 @@ function ReportFooter({
                   Final Average (Year)
                 </td>
                 <td className="py-0.5 font-mono font-semibold text-emerald-700">
-                  {finalAverage.toFixed(2)} / 20
+                  {finalAverage.toFixed(2)} / {marksScale}
                 </td>
               </tr>
             )}
@@ -401,11 +374,14 @@ function ReportCardBody({
   papersFailed,
   termAverages,
   finalAverage,
+  classMasterByClass,
+  settings,
   className = "",
 }) {
   const sequences = termSequences[term] || [];
   const termTitle = `${term.toUpperCase()} REPORT CARD`;
   const streamLabel = student.option ? ` — ${student.option}` : "";
+  const classMasterName = classMasterByClass?.[student.class] || "—";
 
   return (
     <div
@@ -421,9 +397,13 @@ function ReportCardBody({
             <p>----------</p>
             <p>Peace – Work – Fatherland</p>
             <p>----------</p>
-            <p className="font-semibold underline">{SCHOOL_NAME_EN}</p>
-            <p className="font-semibold">{SCHOOL_TOWN}</p>
-            <p className="mt-0.5 italic text-slate-500">{SCHOOL_MOTTO}</p>
+            <p className="font-semibold underline">{settings.schoolName}</p>
+            <p className="font-semibold">{settings.schoolTown || "—"}</p>
+            {settings.motto && (
+              <p className="mt-0.5 italic text-slate-500">
+                Motto: {settings.motto}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col items-center justify-center gap-0.5 py-1 text-center print:py-0">
@@ -436,7 +416,7 @@ function ReportCardBody({
               {termTitle}
             </h1>
             <p className="text-[10px] text-slate-500 print:text-[8.5px]">
-              Academic Year {ACADEMIC_YEAR}
+              Academic Year {settings.academicYear}
             </p>
           </div>
 
@@ -449,9 +429,13 @@ function ReportCardBody({
               Ministry of Secondary Education
             </p>
             <p>----------</p>
-            <p className="font-semibold underline">{REGIONAL_DELEGATION}</p>
+            <p className="font-semibold underline">
+              {settings.regionalDelegation || "—"}
+            </p>
             <p>----------</p>
-            <p className="font-semibold underline">{SUB_DIVISION}</p>
+            <p className="font-semibold underline">
+              {settings.subDivision || "—"}
+            </p>
           </div>
         </div>
 
@@ -461,7 +445,7 @@ function ReportCardBody({
           <FieldRow label="Student ID" value={student.id} />
           <FieldRow label="Class" value={`${student.class}${streamLabel}`} />
           <FieldRow label="Date of birth" value={student.dob || "—"} />
-          <FieldRow label="Class Master" value={CLASS_MASTER_NAME} />
+          <FieldRow label="Class Master" value={classMasterName} />
           <FieldRow label="Date issued" value={reportDate} />
         </div>
 
@@ -557,6 +541,7 @@ function ReportCardBody({
           papersFailed={papersFailed}
           termAverages={termAverages}
           finalAverage={finalAverage}
+          marksScale={settings.marksScale}
         />
 
         {/* Remarks — stamp sits on the Principal's signature line */}
@@ -588,6 +573,16 @@ export default function ReportCards() {
   const [printAll, setPrintAll] = useState(false);
   const [optionFilter, setOptionFilter] = useState("All");
   const [teachers, setTeachers] = useState([]);
+  const [classMasterByClass, setClassMasterByClass] = useState({});
+  const [settings, setSettings] = useState({
+    schoolName: "SCHOOL",
+    schoolTown: "",
+    regionalDelegation: "",
+    subDivision: "",
+    motto: "",
+    academicYear: "",
+    marksScale: "20",
+  });
 
   useEffect(() => {
     getClasses()
@@ -595,6 +590,12 @@ export default function ReportCards() {
         const classNames = data.map((item) => item.name);
         setClasses(classNames);
         if (classNames.length > 0) setSelectedClass(classNames[0]);
+
+        const masterMap = {};
+        data.forEach((c) => {
+          masterMap[c.name] = c.teacher || "—";
+        });
+        setClassMasterByClass(masterMap);
       })
       .catch((err) => setError(err.message));
 
@@ -602,15 +603,17 @@ export default function ReportCards() {
       .then(setTeachers)
       .catch((err) => setError(err.message));
 
-    // Default to whatever the school has set as the current term.
+    // Default to whatever the school has set as the current term, and pick
+    // up the school identity / marks-scale fields for the letterhead.
     getSettings()
-      .then((settings) => {
-        if (termSequences[settings.currentTerm]) {
-          setTerm(settings.currentTerm);
+      .then((s) => {
+        setSettings(s);
+        if (termSequences[s.currentTerm]) {
+          setTerm(s.currentTerm);
         }
       })
       .catch(() => {
-        // Keep the built-in default if settings can't be loaded.
+        // Keep the built-in defaults if settings can't be loaded.
       });
   }, []);
 
@@ -729,7 +732,7 @@ export default function ReportCards() {
           teacher: getTeacherName(teachers, student.class, subject.name),
           marks,
           average,
-          grade: grade(average),
+          grade: gradeForScale(average, settings.marksScale),
         };
       });
       const totalWeighted = subjects.reduce(
@@ -755,7 +758,7 @@ export default function ReportCards() {
         average: totalCoefficient ? totalWeighted / totalCoefficient : 0,
       };
     });
-  }, [students, classMarks, term, teachers]);
+  }, [students, classMarks, term, teachers, settings.marksScale]);
 
   const selectedRecord = useMemo(
     () =>
@@ -792,9 +795,9 @@ export default function ReportCards() {
         studentRecords,
         s.name,
       ),
-      remark: subjectRemark(s.average),
+      remark: remarkForScale(s.average, settings.marksScale),
     }));
-  }, [selectedRecord, studentRecords]);
+  }, [selectedRecord, studentRecords, settings.marksScale]);
 
   // Each student's average for every term, independent of whichever term
   // is currently selected in the dropdown — needed so the "Term Averages"
@@ -1105,7 +1108,12 @@ export default function ReportCards() {
                 classSize={students.length}
                 classAverage={classAverage}
                 status={
-                  selectedRecord ? getStatus(selectedRecord.average) : "—"
+                  selectedRecord
+                    ? statusForScale(
+                        selectedRecord.average,
+                        settings.marksScale,
+                      )
+                    : "—"
                 }
                 totalWeighted={
                   selectedRecord ? selectedRecord.totalWeighted : 0
@@ -1119,6 +1127,8 @@ export default function ReportCards() {
                 finalAverage={
                   selectedStudent ? getFinalAverage(selectedStudent.id) : null
                 }
+                classMasterByClass={classMasterByClass}
+                settings={settings}
               />
             )}
           </Card>
@@ -1136,7 +1146,7 @@ export default function ReportCards() {
                 studentRecords,
                 s.name,
               ),
-              remark: subjectRemark(s.average),
+              remark: remarkForScale(s.average, settings.marksScale),
             }));
             return (
               <div key={record.student.id} className="report-card-page">
@@ -1149,13 +1159,15 @@ export default function ReportCards() {
                   rank={rank}
                   classSize={students.length}
                   classAverage={classAverage}
-                  status={getStatus(record.average)}
+                  status={statusForScale(record.average, settings.marksScale)}
                   totalWeighted={record.totalWeighted}
                   papersSat={record.papersSat}
                   papersPassed={record.papersPassed}
                   papersFailed={record.papersFailed}
                   termAverages={getTermAverages(record.student.id)}
                   finalAverage={getFinalAverage(record.student.id)}
+                  classMasterByClass={classMasterByClass}
+                  settings={settings}
                 />
               </div>
             );
