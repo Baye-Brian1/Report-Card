@@ -13,6 +13,7 @@ import {
   Bell,
   ChevronRight,
   Shield,
+  GraduationCap,
 } from "lucide-react";
 import { focusRing } from "./ui";
 import logo from "../assets/logo.jpg";
@@ -21,6 +22,7 @@ export const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Student Entry", icon: UserPlus, path: "/students" },
   { label: "Marks Entry", icon: PenSquare, path: "/marks" },
+  { label: "My Marks Entry", icon: GraduationCap, path: "/teacher-marks" },
   { label: "Classes", icon: Users, path: "/classes" },
   { label: "Report Cards", icon: FileText, path: "/report-cards" },
   { label: "Performance", icon: TrendingUp, path: "/performance" },
