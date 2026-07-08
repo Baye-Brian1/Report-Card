@@ -97,3 +97,7 @@ export function getSettings() {
 export function saveSettings(partial) {
   return postJson("/api/settings", partial);
 }
+
+export function assignClassMaster(className, teacherId) {
+  return postJson("/api/classes/master", { class: className, teacherId });
+}
