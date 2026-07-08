@@ -41,6 +41,7 @@ export default function MarksEntry() {
   const [teachers, setTeachers] = useState([]);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [marksScale, setMarksScale] = useState(20);
 
   useEffect(() => {
     getClasses()
@@ -55,9 +56,12 @@ export default function MarksEntry() {
       .then(setTeachers)
       .catch((err) => setError(err.message));
 
-    // Default to whatever the school has set as the current term/sequence.
+    // Default to whatever the school has set as the current term/sequence,
+    // and pick up the marks scale (defaults to 20 if not set/loadable).
     getSettings()
       .then((settings) => {
+        setMarksScale(Number(settings.marksScale) || 20);
+
         if (termSequences[settings.currentTerm]) {
           setTerm(settings.currentTerm);
           const validSequences = termSequences[settings.currentTerm];
@@ -69,7 +73,7 @@ export default function MarksEntry() {
         }
       })
       .catch(() => {
-        // If settings can't be loaded, just keep the built-in default.
+        // If settings can't be loaded, just keep the built-in defaults.
       });
   }, []);
 
@@ -141,7 +145,7 @@ export default function MarksEntry() {
     <>
       <PageHeading
         title="Marks Entry"
-        subtitle="Select a class, subject, and sequence, then enter marks out of 20."
+        subtitle={`Select a class, subject, and sequence, then enter marks out of ${marksScale}.`}
       />
 
       <Card>
@@ -282,7 +286,7 @@ export default function MarksEntry() {
                       Teacher
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide">
-                      Marks (0–20)
+                      {`Marks (0–${marksScale})`}
                     </th>
                   </tr>
                 </thead>
@@ -312,7 +316,7 @@ export default function MarksEntry() {
                           <input
                             type="number"
                             min={0}
-                            max={20}
+                            max={marksScale}
                             step={0.5}
                             value={mark}
                             onChange={(e) =>
