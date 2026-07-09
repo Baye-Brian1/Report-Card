@@ -37,7 +37,7 @@ const NavBar = ({ currentSection, onSectionChange }) => {
   };
 
   return (
-    <nav className={`fixed top-0 right-0 left-0 backdrop-blur-xl z-50 transition-all duration-500 ${scrolled?"bg-white shadow-md":"bg-transparent"}`}>
+    <nav className={`fixed top-0 right-0 left-0 backdrop-blur-xl z-50 transition-all duration-500 ${scrolled?"bg-[#e8eef9] shadow-md":"bg-transparent"}`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div

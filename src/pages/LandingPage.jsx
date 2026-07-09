@@ -34,10 +34,8 @@ const LandingPage = () => {
           <div className="relative z-10 min-h-screen items-center flex">
             <div className="mx-auto flex max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-14 ">
               <div className="flex w-full flex-col items-center text-center">
-                <p className="mt-10 mb-1 text-[#64748B] font-semibold uppercase tracking-[0.24em] sm:text-sm">
-                  Smart Report card for Teachers
-                </p>
-                <h1 className="text-[0.7rem] md:text-8xl max-w-6xl leading-[0.95] tracking-[-0.05em] font-semibold text-[#0F172A] mb-3 text-balance">
+                
+                <h1 className="text-[45px] md:text-8xl max-w-6xl leading-[0.95] tracking-[-0.05em] font-semibold text-[#0F172A] mb-3 text-balance">
                   Smart Report Card
                   <span className="block text-[#2563eb]">
                     Management System
@@ -50,10 +48,10 @@ const LandingPage = () => {
                   reliable for schools
                 </p>
 
-                <div className="flex flex-col sm:flex-row mt-4 gap-4 justify-center">
+                <div className="flex w-full flex-col sm:flex-row mt-4 gap-4 justify-center">
                   <Link
                     to="/login"
-                    className="px-8 py-2 rounded-[4px] bg-[#2563eb] text-white font-semibold hover:bg-blue-600 transition transform hover:scale-105 flex items-center gap-2"
+                    className="px-8 py-2 text-center rounded-[4px] bg-[#2563eb] text-white font-semibold hover:bg-blue-600 transition transform hover:scale-105 "
                   >
                     Get Started
                   </Link>
@@ -88,7 +86,7 @@ const LandingPage = () => {
           </div>
         </section>
         
-        <section id="about" className="mt-[-50px]">
+        <section id="about" className="mt-[-30px]">
           <div className="max-w-6xl gap-8 md:flex w-full mx-auto px-4 py-14 sm:px-6 lg:py-20 lg:px-10">
             <div className="mb-10">
               <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[#2563eb] sm:text-[34px]">
@@ -99,7 +97,7 @@ const LandingPage = () => {
                 Educators. Focus more on teaching, and let us handle the
                 reportings
               </p>
-              <ul className="mt-7 items-center justify-center text-[#0F172A] sm:text-[16px] grid sm:grid-cols-2 gap-4">
+              <ul className="mt-7 text-[#0F172A] sm:text-[16px] grid sm:grid-cols-2 gap-4">
                 <li className="flex items-center gap-2">
                   <Check className="text-[#2563eb] w-4 h-4" />
                   Reduces manual work
@@ -294,7 +292,7 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row mt-4 gap-4 justify-center">
                   <Link
                     to="/login"
-                    className="px-8 py-2 rounded-[4px] bg-[#2563eb] text-white font-semibold hover:bg-blue-600 transition transform hover:scale-105 flex items-center gap-2"
+                    className="px-8 py-2 text-center rounded-[4px] bg-[#2563eb] text-white font-semibold hover:bg-blue-600 transition transform hover:scale-105 "
                   >
                     Get Started
                   </Link>
