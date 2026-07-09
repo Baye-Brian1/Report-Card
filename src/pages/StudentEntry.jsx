@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserPlus, Search, Pencil, Trash2, GraduationCap } from "lucide-react";
 import {
   Card,
@@ -12,59 +12,120 @@ import {
   Badge,
   focusRing,
 } from "../components/ui";
-
-const initialStudents = [
-  {
-    id: "SPX-0001",
-    name: "Ama Nkeng",
-    class: "Form 1",
-    gender: "Female",
-    guardian: "Mr. Nkeng Paul",
-    status: "Active",
-  },
-  {
-    id: "SPX-0002",
-    name: "Brian Ateh",
-    class: "Form 2",
-    gender: "Male",
-    guardian: "Mrs. Ateh Comfort",
-    status: "Active",
-  },
-];
-
-const classes = ["Form 1", "Form 2", "Form 3", "Form 4", "Form 5"];
+import { addStudent, getClasses, getStudents } from "../utils/api";
+import {
+  CLASS_NAMES,
+  requiresStream,
+  isSixthForm,
+  getCoreSubjects,
+  getSixthFormElectivePool,
+  ELECTIVE_SUBJECTS,
+  SIXTH_FORM_MAX_SUBJECTS,
+} from "../utils/subjects";
 
 export default function StudentEntry() {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [form, setForm] = useState({
     name: "",
     dob: "",
     gender: "Male",
-    class: "Form 1",
+    class: "",
     guardian: "",
     phone: "",
+    option: "",
+    electives: [],
   });
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getStudents()
+      .then(setStudents)
+      .catch((err) => setError(err.message));
+    getClasses()
+      .then((data) => {
+        const names = data.map((c) => c.name);
+        const merged = Array.from(new Set([...CLASS_NAMES, ...names]));
+        setClasses(merged);
+      })
+      .catch((err) => setError(err.message));
+  }, []);
+
+  const streamRequired = requiresStream(form.class);
+  const sixthForm = isSixthForm(form.class);
+
+  // Sixth form: pick freely from the stream's pool, capped so that
+  // anchor (1) + chosen extras never exceed SIXTH_FORM_MAX_SUBJECTS.
+  const sixthFormPool = sixthForm ? getSixthFormElectivePool(form.option) : [];
+  const sixthFormMaxExtra = SIXTH_FORM_MAX_SUBJECTS - 1; // slot reserved for the anchor
+  const sixthFormAtLimit = form.electives.length >= sixthFormMaxExtra;
+
+  // Form 4/5: fixed core subjects + optional bonus electives, uncapped.
+  const coreSubjects =
+    streamRequired && !sixthForm
+      ? getCoreSubjects(form.class, form.option)
+      : [];
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function handleSubmit(e) {
+  function toggleElective(name) {
+    setForm((f) => {
+      const has = f.electives.includes(name);
+      if (has) {
+        return { ...f, electives: f.electives.filter((e) => e !== name) };
+      }
+      if (sixthForm && f.electives.length >= sixthFormMaxExtra) {
+        return f; // at the cap, ignore further additions
+      }
+      return { ...f, electives: [...f.electives, name] };
+    });
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim()) return;
-    const nextId = `SPX-${String(students.length + 1).padStart(4, "0")}`;
-    setStudents((s) => [
-      ...s,
-      {
-        id: nextId,
-        name: form.name,
-        class: form.class,
+    if (streamRequired && !form.option) {
+      setError("Please select Science or Arts for this class.");
+      return;
+    }
+    if (sixthForm && form.option && form.electives.length === 0) {
+      setError(
+        "Please select at least one additional subject alongside the compulsory one.",
+      );
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const student = await addStudent({
+        name: form.name.trim(),
+        class: form.class || classes[0] || "Form 1",
         gender: form.gender,
-        guardian: form.guardian || "—",
-        status: "Active",
-      },
-    ]);
-    setForm({ name: "", dob: "", gender: "Male", class: "Form 1", guardian: "", phone: "" });
+        guardian: form.guardian.trim() || "—",
+        phone: form.phone.trim() || "—",
+        dob: form.dob || "—",
+        option: streamRequired ? form.option : "",
+        electives: streamRequired ? form.electives.join(",") : "",
+      });
+      setStudents((prev) => [...prev, student]);
+      setForm({
+        name: "",
+        dob: "",
+        gender: "Male",
+        class: classes[0] || "Form 1",
+        guardian: "",
+        phone: "",
+        option: "",
+        electives: [],
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -121,13 +182,112 @@ export default function StudentEntry() {
               <Select
                 id="class"
                 value={form.class}
-                onChange={(e) => update("class", e.target.value)}
+                onChange={(e) => {
+                  update("class", e.target.value);
+                  update("option", "");
+                  update("electives", []);
+                }}
               >
                 {classes.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </Select>
             </div>
+
+            {streamRequired && (
+              <div>
+                <Label htmlFor="option">Option (Science / Arts)</Label>
+                <Select
+                  id="option"
+                  value={form.option}
+                  onChange={(e) => {
+                    update("option", e.target.value);
+                    update("electives", []);
+                  }}
+                >
+                  <option value="">-- Select an option --</option>
+                  <option value="Science">Science</option>
+                  <option value="Arts">Arts</option>
+                </Select>
+              </div>
+            )}
+
+            {/* Form 4 / Form 5: fixed core, plus optional bonus subjects */}
+            {streamRequired && !sixthForm && form.option && (
+              <>
+                <div className="rounded-lg border border-dashed border-[#e2e8f0] bg-[#f8fafc] p-3 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-600">
+                    Compulsory subjects ({form.option}):
+                  </span>{" "}
+                  {coreSubjects.map((s) => s.name).join(", ")}
+                </div>
+
+                <div>
+                  <Label>Optional Subjects (choose any extra)</Label>
+                  <div className="flex flex-col gap-1.5 rounded-lg border border-[#e2e8f0] p-3">
+                    {ELECTIVE_SUBJECTS.map((subject) => (
+                      <label
+                        key={subject.name}
+                        className="flex items-center gap-2 text-sm text-slate-600"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.electives.includes(subject.name)}
+                          onChange={() => toggleElective(subject.name)}
+                        />
+                        {subject.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Lower / Upper Sixth: one compulsory anchor + free choice, capped at 5 total */}
+            {sixthForm && form.option && (
+              <>
+                <div className="rounded-lg border border-dashed border-[#e2e8f0] bg-[#f8fafc] p-3 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-600">
+                    Compulsory subject ({form.option}):
+                  </span>{" "}
+                  {form.option === "Science" ? "Chemistry" : "History"}
+                </div>
+
+                <div>
+                  <Label>
+                    Choose Subjects ({form.electives.length + 1} /{" "}
+                    {SIXTH_FORM_MAX_SUBJECTS})
+                  </Label>
+                  <div className="flex flex-col gap-1.5 rounded-lg border border-[#e2e8f0] p-3">
+                    {sixthFormPool.map((subject) => {
+                      const checked = form.electives.includes(subject.name);
+                      const disabled = !checked && sixthFormAtLimit;
+                      return (
+                        <label
+                          key={subject.name}
+                          className={`flex items-center gap-2 text-sm ${
+                            disabled ? "text-slate-300" : "text-slate-600"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={() => toggleElective(subject.name)}
+                          />
+                          {subject.name}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {sixthFormAtLimit && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      Maximum of {SIXTH_FORM_MAX_SUBJECTS} subjects reached.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div>
               <Label htmlFor="guardian">Guardian Name</Label>
@@ -150,9 +310,15 @@ export default function StudentEntry() {
               />
             </div>
 
-            <Button type="submit" icon={UserPlus} className="mt-2 w-full">
-              Save Student
+            <Button
+              type="submit"
+              icon={UserPlus}
+              className="mt-2 w-full"
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Save Student"}
             </Button>
+            {error && <p className="text-sm text-rose-500">{error}</p>}
           </form>
         </Card>
 
@@ -181,14 +347,37 @@ export default function StudentEntry() {
               No students yet — add your first one.
             </div>
           ) : (
-            <Table columns={["Student ID", "Name", "Class", "Gender", "Guardian", "Status", ""]}>
+            <Table
+              columns={[
+                "Student ID",
+                "Name",
+                "Class",
+                "Option",
+                "Gender",
+                "Guardian",
+                "Phone",
+                "Status",
+                "",
+              ]}
+            >
               {students.map((s) => (
-                <tr key={s.id} className="transition-colors hover:bg-[#f1f5f9]/60">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{s.id}</td>
-                  <td className="px-4 py-3 font-medium text-[#1e3a8a]">{s.name}</td>
+                <tr
+                  key={s.id}
+                  className="transition-colors hover:bg-[#f1f5f9]/60"
+                >
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                    {s.id}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-[#1e3a8a]">
+                    {s.name}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{s.class}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {s.option || "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{s.gender}</td>
                   <td className="px-4 py-3 text-slate-600">{s.guardian}</td>
+                  <td className="px-4 py-3 text-slate-600">{s.phone || "—"}</td>
                   <td className="px-4 py-3">
                     <Badge tone="emerald">{s.status}</Badge>
                   </td>
@@ -203,7 +392,9 @@ export default function StudentEntry() {
                       <button
                         aria-label="Remove student"
                         onClick={() =>
-                          setStudents((list) => list.filter((x) => x.id !== s.id))
+                          setStudents((list) =>
+                            list.filter((x) => x.id !== s.id),
+                          )
                         }
                         className={`rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500 ${focusRing}`}
                       >
