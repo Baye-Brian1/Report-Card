@@ -1,0 +1,11 @@
+package com.reportcard;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ReportCardBackendApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ReportCardBackendApplication.class, args);
+    }
+}
