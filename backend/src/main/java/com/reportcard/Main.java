@@ -649,7 +649,7 @@ public class Main {
 
         static synchronized Student addStudent(String name, String className, String gender, String guardian,
                 String phone, String dob, String option, String electives) {
-            String id = String.format("SPX-%04d", students.size() + 1);
+            String id = String.format("NCY-%04d", students.size() + 1);
             Student s = new Student(id, name, className, gender, guardian, phone, dob, option, electives);
             students.add(s);
             boolean found = false;
