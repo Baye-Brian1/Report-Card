@@ -1,5 +1,7 @@
+const API_BASE = import.meta.env.DEV ? "" : "http://localhost:8080";
+
 export async function getJson(path) {
-  const res = await fetch(path);
+  const res = await fetch(API_BASE + path);
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API error ${res.status}: ${body}`);
@@ -8,7 +10,7 @@ export async function getJson(path) {
 }
 
 export async function postJson(path, data) {
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -21,7 +23,7 @@ export async function postJson(path, data) {
 }
 
 export async function deleteJson(path) {
-  const res = await fetch(path, { method: "DELETE" });
+  const res = await fetch(API_BASE + path, { method: "DELETE" });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API error ${res.status}: ${body}`);
