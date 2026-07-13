@@ -7,7 +7,7 @@ import {
   Button,
   Badge,
   Select,
-} from "../components/ui";
+} from "../../components/ui";
 
 import {
   getClasses,
@@ -16,19 +16,19 @@ import {
   logActivity,
   getTeachers,
   getSettings,
-} from "../utils/api";
+} from "../../utils/api";
 import {
   gradeForScale,
   statusForScale,
   remarkForScale,
-} from "../utils/grading";
-import logo from "../assets/logo.jpg";
-import stamp from "../assets/stamp.webp";
+} from "../../utils/grading";
+import logo from "../../assets/logo.jpg";
+import stamp from "../../assets/stamp.webp";
 import {
   getSubjectsForStudent,
   getTeacherName,
   requiresStream,
-} from "../utils/subjects";
+} from "../../utils/subjects";
 
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],
