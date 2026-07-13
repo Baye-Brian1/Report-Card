@@ -144,14 +144,15 @@ const HelpCenter = () => {
                 <Phone className="text-blue-600" size={20} />
                 <div>
                   <p className="text-sm text-gray-600">Phone Support</p>
-                  <p className="font-semibold text-gray-800">+237 123 456 789</p>
+                  <p className="font-semibold text-gray-800">+237 675717944</p>
+                   <p className="font-semibold text-gray-800">+237 678772649</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="text-blue-600" size={20} />
                 <div>
                   <p className="text-sm text-gray-600">Email Support</p>
-                  <p className="font-semibold text-gray-800">support@school.edu</p>
+                  <p className="font-semibold text-gray-800">bayebrian89@gmail.com</p>
                 </div>
               </div>
             </div>

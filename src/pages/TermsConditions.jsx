@@ -15,7 +15,7 @@ const TermsConditions = () => {
           <div className="text-center mb-8">
             <FileText className="w-16 h-16 text-blue-600 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-[#1e3a8a]">Terms & Conditions</h1>
-            <p className="text-gray-600 mt-2">Last updated: January 2024</p>
+            <p className="text-gray-600 mt-2">Last updated: July 2026</p>
           </div>
 
           <div className="space-y-6 text-gray-700">
@@ -40,24 +40,24 @@ const TermsConditions = () => {
               </h2>
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>You must be authorized to use this system</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Your account is for educational purposes only</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Keep your login credentials confidential</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>You are responsible for all activities under your account</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Report any unauthorized access immediately</span>
                   </li>
                 </ul>
@@ -71,24 +71,24 @@ const TermsConditions = () => {
               </h2>
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                   <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Accurately enter and maintain student records</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Keep all student data confidential</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Use the system only for authorized purposes</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Respect the intellectual property of the system</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-blue-600 text-2xl font-bold">.</span>
                     <span>Not attempt to disrupt or compromise system security</span>
                   </li>
                 </ul>
@@ -113,24 +113,24 @@ const TermsConditions = () => {
               <h2 className="text-xl font-bold text-[#1e3a8a] mb-3">Prohibited Activities</h2>
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-red-500 text-2xl font-bold">.</span>
                     <span>Accessing data without proper authorization</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                   <span className="text-red-500 text-2xl font-bold">.</span>
                     <span>Tampering with system functionality</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-red-500 text-2xl font-bold">.</span>
                     <span>Uploading malicious content or viruses</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-red-500 text-2xl font-bold">.</span>
                     <span>Attempting to bypass security measures</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 font-bold">•</span>
+                  <li className="flex items-end gap-2">
+                    <span className="text-red-500 text-2xl font-bold">.</span>
                     <span>Sharing sensitive data with unauthorized parties</span>
                   </li>
                 </ul>
@@ -176,14 +176,15 @@ const TermsConditions = () => {
               <h3 className="font-bold text-blue-800 mb-2">Questions?</h3>
               <p className="text-sm text-gray-700">
                 If you have questions about these Terms & Conditions, please contact us at 
-                <strong> legal@school.edu</strong> or call 
-                <strong> +237 123 456 789</strong>.
+                <strong> bayebrian89@gmail.com</strong> or call 
+                <strong> +237 678772649</strong> 
+                <strong> /  +237 675717944</strong>.
               </p>
             </div>
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>© 2024 School Report Card System. All rights reserved.</p>
+            <p>SCHOOL Report Card &amp; Information System. All rights reserved.</p>
           </div>
         </div>
       </div>
