@@ -8,12 +8,17 @@ import {
   TriangleAlert,
   User,
   ArrowLeft,
+  Shield,
+  Users,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const RegisterPage = () => {
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("teacher");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,25 +27,78 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
     if (!name || !email || !password) {
-      setError("please fill in all the fields");
+      setError("Please fill in all the fields");
       return;
     }
-    setLoading(true);
+    
     if (password.length < 6) {
       setError("Password must contain at least 6 characters");
+      return;
     }
+    
+    setLoading(true);
     try {
-      await (name, email, password);
-      Navigate("/dashboard");
+      await register(name, email, password, role);
+      // After registration, redirect to login
+      navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.error || "Registration failed. Please try again",
-      );
+      setError(err.message || "Registration failed. Please try again");
     } finally {
       setLoading(false);
     }
   };
+  const RoleSelection = () => (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setRole("teacher")}
+          className={`p-1 rounded-md border-2 transition-all ${
+            role === "teacher"
+              ? "border-[#2563EB] bg-blue-50"
+              : "border-[#E2E8F0] hover:border-[#94A3B8]"
+          }`}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <Users
+              className={`w-5 h-5 ${role === "teacher" ? "text-[#2563EB]" : "text-[#64748B]"}`}
+            />
+            <span
+              className={`text-sm font-medium ${role === "teacher" ? "text-[#2563EB]" : "text-[#0F172A]"}`}
+            >
+              Teacher
+            </span>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setRole("admin")}
+          className={`p-1 rounded-md border-2 transition-all ${
+            role === "admin"
+              ? "border-[#2563EB] bg-blue-50"
+              : "border-[#E2E8F0] hover:border-[#94A3B8]"
+          }`}
+        >
+          <div className="flex flex-col items-center">
+            <Shield
+              className={`w-4 h-4 ${
+                role === "admin" ? "text-[#2563EB]" : "text-[#64748B]"
+              }`}
+            />
+            <p
+              className={`text-sm font-medium ${
+                role === "admin" ? "text-[#2563EB]" : "text-[#0F172A]"
+              }`}
+            >
+              Administrator
+            </p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
   return (
     <div className="min-h-screen items-center bg-[#e8eef9]  justify-center flex px-4 py-8 relative  overflow:hidden">
       <div className="absolute inset-0">
@@ -71,6 +129,7 @@ const RegisterPage = () => {
             {error}
           </div>
         )}
+        <RoleSelection />
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="text-sm font-semibold text-[#0F172A]">Name</label>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { UserPlus, PenSquare, FileText, Users, Filter } from "lucide-react";
-import { Card, PageHeading, Select } from "../components/ui";
-import { getActivities } from "../utils/api";
+import { Card, PageHeading, Select } from "../../components/ui";
+import { getActivities } from "../../utils/api";
 
 const iconByType = {
   Student: UserPlus,

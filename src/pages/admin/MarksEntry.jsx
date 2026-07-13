@@ -7,7 +7,7 @@ import {
   Button,
   Label,
   Select,
-} from "../components/ui";
+} from "../../components/ui";
 import {
   getClasses,
   getRoster,
@@ -15,12 +15,12 @@ import {
   getMarks,
   getSettings,
   getTeachers,
-} from "../utils/api";
+} from "../../utils/api";
 import {
   getSubjectsForStudent,
   getTeacherName,
   requiresStream,
-} from "../utils/subjects";
+} from "../../utils/subjects";
 
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],

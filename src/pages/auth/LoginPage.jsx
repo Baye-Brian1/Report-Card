@@ -8,9 +8,11 @@ import {
   TriangleAlert,
   ArrowLeft,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const LoginPage = () => {
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,16 +22,25 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
     if (!email || !password) {
-      setError("please fill in all the fields");
+      setError("Please fill in all the fields");
       return;
     }
+    
     setLoading(true);
     try {
-      await (email, password);
-      Navigate("/dashboard");
+      const user = await login(email, password);
+      // Redirect based on role
+      if (user.role === 'admin') {
+        navigate("/admin/dashboard");
+      } else if (user.role === 'teacher') {
+        navigate("/teacher/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed. Please try again");
+      setError(err.message || "Login failed. Please try again");
     } finally {
       setLoading(false);
     }

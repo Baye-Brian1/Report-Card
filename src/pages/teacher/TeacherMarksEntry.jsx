@@ -8,15 +8,15 @@ import {
   Label,
   Select,
   Table,
-} from "../components/ui";
+} from "../../components/ui";
 import {
   getTeachers,
   getRoster,
   getMarks,
   saveMarks,
   getSettings,
-} from "../utils/api";
-import { getSubjectsForStudent } from "../utils/subjects";
+} from "../../utils/api";
+import { getSubjectsForStudent } from "../../utils/subjects";
 
 const termSequences = {
   "First Term": ["Sequence 1", "Sequence 2"],

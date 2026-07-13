@@ -9,7 +9,7 @@ import {
   FileCheck,
   Check,
   File,
-  Microchip,
+  Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Card from "../components/Card";
@@ -210,9 +210,9 @@ const LandingPage = () => {
                 text="Generate professional report cards instantly with one click"
               />
               <Card
-                icon={<Microchip />}
-                title="Export to Excel"
-                text="Export report cards to excel for easy sharing and storage"
+                icon={<Upload />}
+                title="Download Report Cards"
+                text="Download your report cards easily with one click"
               />
               <Card
                 icon={<Lock />}
