@@ -30,15 +30,15 @@ const Footer=()=>{
             <div>
               <h4 className="text-white font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-sm text-white">
-                <li><a href="#home" className="hover:border-b-2 cursor-pointer transition">User guide</a></li>
-                <li><a href="#about" className="hover:border-b-2 transition">Help Center</a></li>
+                <li><Link to="/user-guide" className="hover:border-b-2 cursor-pointer transition">User Guide</Link></li>
+                <li><Link to="/help" className="hover:border-b-2 cursor-pointer transition">Help Center</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-white">
-                <li><a href="#" className="hover:border-b-2 cursor-pointer transition">Privacy</a></li>
-                <li><a href="#" className="hover:border-b-2cursor-pointe transition">Terms</a></li>
+                <li><Link to="/privacy" className="hover:border-b-2 cursor-pointer transition">Privacy</Link></li>
+                <li><Link to="/terms" className="hover:border-b-2 cursor-pointer transition">Terms</Link></li>
               </ul>
             </div>
           </div>

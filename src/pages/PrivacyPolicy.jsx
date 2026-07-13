@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Lock, Eye, Database, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Shield, Lock, Eye, Database, CheckCircle, Check } from 'lucide-react';
 
 const PrivacyPolicy = () => {
   return (
@@ -15,7 +15,7 @@ const PrivacyPolicy = () => {
           <div className="text-center mb-8">
             <Shield className="w-16 h-16 text-blue-600 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-[#1e3a8a]">Privacy Policy</h1>
-            <p className="text-gray-600 mt-2">Last updated: January 2024</p>
+            <p className="text-gray-600 mt-2">Last updated: July 2026</p>
           </div>
 
           <div className="space-y-6 text-gray-700">
@@ -28,19 +28,19 @@ const PrivacyPolicy = () => {
                 <p className="mb-3">We collect the following types of information:</p>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="text-green-500 mt-1" size={16} />
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span><strong>Personal Information:</strong> Name, email address, phone number</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="text-green-500 mt-1" size={16} />
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span><strong>Student Data:</strong> Academic records, marks, attendance</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="text-green-500 mt-1" size={16} />
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span><strong>School Information:</strong> Institution details, class structures</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="text-green-500 mt-1" size={16} />
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span><strong>Usage Data:</strong> System activity logs, login history</span>
                   </li>
                 </ul>
@@ -55,23 +55,23 @@ const PrivacyPolicy = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>To generate and manage student report cards</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>To track academic performance and progress</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>To manage teacher assignments and class rosters</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>To send notifications and updates</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>To improve system performance and user experience</span>
                   </li>
                 </ul>
@@ -86,23 +86,23 @@ const PrivacyPolicy = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>All data is encrypted in transit using SSL/TLS</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>Access is role-based with strict authentication</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>Data is stored securely in our database systems</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>Regular security audits and updates</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <Check className="text-blue-600 font-bold"/>
                     <span>Backup systems ensure data recovery</span>
                   </li>
                 </ul>
@@ -125,19 +125,19 @@ const PrivacyPolicy = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span>Access your personal data at any time</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span>Request corrections to inaccurate data</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span>Request deletion of your data</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">•</span>
+                    <CheckCircle className="text-blue-600 mt-1" size={16} />
                     <span>Opt out of communications</span>
                   </li>
                 </ul>
@@ -151,16 +151,16 @@ const PrivacyPolicy = () => {
                   If you have any questions about this Privacy Policy, please contact us:
                 </p>
                 <ul className="space-y-1 text-sm">
-                  <li><strong>Email:</strong> privacy@school.edu</li>
-                  <li><strong>Phone:</strong> +237 123 456 789</li>
-                  <li><strong>Address:</strong> School Name, City, Country</li>
+                  <li><strong>Email:</strong> bayebrian89@gmail.com</li>
+                  <li><strong>Phone:</strong> +237 678772649</li>
+                  <li><strong>Phone:</strong> +237 675717944</li>
                 </ul>
               </div>
             </section>
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>© 2024 School Report Card System. All rights reserved.</p>
+            <p>SCHOOL Report Card &amp; Information System. All rights reserved.</p>
           </div>
         </div>
       </div>
