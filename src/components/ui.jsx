@@ -1,15 +1,5 @@
 import React from "react";
 
-/* ---------- Design tokens (shared across the whole app) ----------
-   Navy      #1e3a8a  primary brand / headings / sidebar
-   Navy-2    #1d4ed8  lighter navy (gradients)
-   Sky       #0ea5e9  accent — links, highlights, active states
-   Emerald   #10b981  primary actions, success / positive trend
-   Amber     #f59e0b  warnings / pending states
-   Rose      #f43f5e  destructive actions / alerts
-   Slate-BG  #f1f5f9  page background
-   Slate-Ln  #e2e8f0  hairline dividers
------------------------------------------------------------------- */
 
 export const focusRing =
   "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0ea5e9] focus-visible:ring-offset-2";

@@ -11,8 +11,8 @@ import {
   Tooltip,
 } from "recharts";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Card, CardHeader, PageHeading, Badge, Select } from "../components/ui";
-import { getClasses, getRoster, getMarks } from "../utils/api";
+import { Card, CardHeader, PageHeading, Badge, Select } from "../../components/ui";
+import { getClasses, getRoster, getMarks } from "../../utils/api";
 
 const subjectRows = [
   { name: "English Language", coefficient: 5 },

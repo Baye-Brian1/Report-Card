@@ -6,13 +6,13 @@ import {
   EyeOff,
   Lock,
   TriangleAlert,
-  User,
   ArrowLeft,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
-const RegisterPage = () => {
-  const Navigate = useNavigate();
-  const [name, setName] = useState("");
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,27 +22,31 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!name || !email || !password) {
-      setError("please fill in all the fields");
+    
+    if (!email || !password) {
+      setError("Please fill in all the fields");
       return;
     }
+    
     setLoading(true);
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters");
-    }
     try {
-      await (name, email, password);
-      Navigate("/dashboard");
+      const user = await login(email, password);
+      // Redirect based on role
+      if (user.role === 'admin') {
+        navigate("/admin/dashboard");
+      } else if (user.role === 'teacher') {
+        navigate("/teacher/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      setError(
-        err.response?.data?.error || "Registration failed. Please try again",
-      );
+      setError(err.message || "Login failed. Please try again");
     } finally {
       setLoading(false);
     }
   };
   return (
-    <div className="min-h-screen items-center justify-center flex px-4 py-8 relative  overflow:hidden">
+    <div className="min-h-screen items-center bg-[#e8eef9]  justify-center flex px-4 py-8 relative  overflow:hidden">
       <div className="absolute inset-0">
         <div
           className="absolute inset-0"
@@ -59,10 +63,10 @@ const RegisterPage = () => {
         </div>
         <div className="text-center mb-2">
           <h2 className="text-[25px] font-bold text-[#1b2336] mb-1">
-            Create Account
+            Welcome Back!
           </h2>
           <p className="text-[#64748B] text-sm">
-            Join us and start managing <br /> report cards effortlessly
+            Login to your account and continue
           </p>
         </div>
         {error && (
@@ -72,20 +76,6 @@ const RegisterPage = () => {
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="text-sm font-semibold text-[#0F172A]">Name</label>
-            <div className="relative">
-              <User className="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input
-                type="text"
-                value={name}
-                placeholder="Enter your name"
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xs bg-white/5 border border-[#E2E8F0] text-[#0F172A] placeholder-[#64748B] focus:outline-none transition"
-                required
-              />
-            </div>
-          </div>
           <div>
             <label className="text-sm font-semibold text-[#0F172A]">
               Email
@@ -128,34 +118,64 @@ const RegisterPage = () => {
                 )}
               </button>
             </div>
-
-            <div className="flex gap-2 items-center mt-3 mb-3">
-              <input
-                type="checkbox"
-                className="focus:outline-blue-600 border-blue-600"
-              />
-              <p className="text-sm">
-                I agree to the{" "}
-                <span className="text-blue-600">Terms & Conditions</span>
+            <div className="flex justify-between mt-3">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="checkbox"
+                  className="focus:outline-blue-600 border-blue-600"
+                />
+                <p className="text-sm">Remember Me</p>
+              </div>
+              <p className="text-[#2563EB] font-semibold text-sm">
+                Forgot Password?
               </p>
             </div>
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 rounded-xs cursor-pointer bg-[#155cf4] text-white font-semibol transition flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-xs cursor-pointer bg-[#2563EB] text-white font-semibol transition flex items-center justify-center gap-2"
           >
-            {loading ? "Processing..." : <>Register</>}
+            {loading ? "Processing..." : <>Login</>}
+          </button>
+          <div className="flex items-center">
+            <span className="h-[1px] border border-[#E2E8F0] w-[25%]"></span>
+            <span className="text-sm text-[#64748B] mr-5 ml-5">
+              or continue with
+            </span>
+            <span className="h-[1px] border border-[#E2E8F0] w-[25%]"></span>
+          </div>
+
+          <button className="w-full py-2 rounded-xs cursor-pointer text-black border border-[#E2E8F0] font-semibold hover:bg-gray-200 transition transform  flex items-center justify-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+            </svg>
+            Google
           </button>
         </form>
         <div className="mt-2 text-center">
           <p className="text-gray-400 text-sm">
             Don't have an account?{" "}
             <Link
-              to="/login"
+              to="/register"
               className="text-[#2563EB] cursor-pointer hover:underline font-medium"
             >
-              Sign In
+              Sign up
             </Link>
           </p>
         </div>
@@ -163,4 +183,4 @@ const RegisterPage = () => {
     </div>
   );
 };
-export default RegisterPage;
+export default LoginPage;

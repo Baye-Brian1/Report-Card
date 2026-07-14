@@ -21,7 +21,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { Card, focusRing } from "../components/ui";
+import { Card, focusRing } from "../../components/ui";
 import {
   getStudents,
   getClasses,
@@ -29,8 +29,8 @@ import {
   getMarks,
   getActivities,
   getSettings,
-} from "../utils/api";
-import { getSubjectsForStudent } from "../utils/subjects";
+} from "../../utils/api";
+import { getSubjectsForStudent } from "../../utils/subjects";
 
 const quickActions = [
   { label: "Add New Student", icon: UserPlus, to: "/students" },
@@ -92,7 +92,7 @@ function StatTile({ label, value, icon: Icon, tone }) {
   );
 }
 
-export default function Dashboard() {
+export default function AdminDashboard() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [activities, setActivities] = useState([]);
