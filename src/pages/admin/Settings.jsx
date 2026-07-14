@@ -19,7 +19,7 @@ import {
   Input,
   Select,
   Badge,
-} from "../components/ui";
+} from "../../components/ui";
 import {
   getSettings,
   saveSettings,
@@ -30,8 +30,8 @@ import {
   deleteTeacher,
   getClasses,
   assignClassMaster,
-} from "../utils/api";
-import { CLASS_NAMES, ALL_SUBJECTS } from "../utils/subjects";
+} from "../../utils/api";
+import { CLASS_NAMES, ALL_SUBJECTS } from "../../utils/subjects";
 
 function Toggle({ checked, onChange, label }) {
   return (

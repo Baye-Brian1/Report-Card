@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   UserPlus,
@@ -14,23 +14,33 @@ import {
   ChevronRight,
   ChevronLeft,
   GraduationCap,
+  LogOut,
 } from "lucide-react";
-import { focusRing } from "./ui";
-import logo from "../assets/logo.jpg";
+import { useAuth } from "../context/AuthContext";
+import { focusRing } from "./ui"; // <- This was missing
+import logo from "../assets/logo.jpg"; // <- This was missing
 
-export const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Student Entry", icon: UserPlus, path: "/students" },
-  { label: "Marks Entry", icon: PenSquare, path: "/marks" },
-  { label: "My Marks Entry", icon: GraduationCap, path: "/teacher-marks" },
-  { label: "Classes", icon: Users, path: "/classes" },
-  { label: "Report Cards", icon: FileText, path: "/report-cards" },
-  { label: "Performance", icon: TrendingUp, path: "/performance" },
-  { label: "Activities", icon: RotateCcw, path: "/activities" },
-  { label: "Settings", icon: SettingsIcon, path: "/settings" },
+// Admin navigation
+const adminNavItems = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { label: "Student Entry", icon: UserPlus, path: "/admin/students" },
+  { label: "Marks Entry", icon: PenSquare, path: "/admin/marks" },
+  { label: "Classes", icon: Users, path: "/admin/classes" },
+  { label: "Report Cards", icon: FileText, path: "/admin/report-cards" },
+  { label: "Performance", icon: TrendingUp, path: "/admin/performance" },
+  { label: "Activities", icon: RotateCcw, path: "/admin/activities" },
+  { label: "Settings", icon: SettingsIcon, path: "/admin/settings" },
 ];
 
-function NavList({ collapsed }) {
+// Teacher navigation
+const teacherNavItems = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/teacher/dashboard" },
+  { label: "My Marks Entry", icon: GraduationCap, path: "/teacher/marks" },
+  { label: "My Students", icon: Users, path: "/teacher/students" },
+  { label: "Report Cards", icon: FileText, path: "/teacher/report-cards" },
+];
+
+function NavList({ collapsed, navItems }) {
   return (
     <ul className="flex flex-col gap-1">
       {navItems.map(({ label, icon: Icon, path }) => (
@@ -40,7 +50,9 @@ function NavList({ collapsed }) {
             end={path === "/"}
             title={collapsed ? label : undefined}
             className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] ${focusRing} focus-visible:ring-offset-[#1e3a8a] ${
+              `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] ${
+                focusRing || ""
+              } focus-visible:ring-offset-[#1e3a8a] ${
                 collapsed ? "justify-center" : "w-full"
               } ${
                 isActive
@@ -60,14 +72,28 @@ function NavList({ collapsed }) {
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
-  const current =
-    navItems.find((n) =>
-      n.path === "/"
-        ? location.pathname === "/"
-        : location.pathname.startsWith(n.path),
-    )?.label || "Dashboard";
+  // Determine which nav items to show based on role
+  const navItems = user?.role === 'admin' ? adminNavItems : teacherNavItems;
+
+  const current = navItems.find((n) =>
+    n.path === "/" 
+      ? location.pathname === "/" 
+      : location.pathname.startsWith(n.path)
+  )?.label || "Dashboard";
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  // Get user initials for avatar
+  const userInitials = user?.name 
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'AD';
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] font-sans text-[#1e293b] antialiased">
@@ -82,11 +108,14 @@ export default function Layout() {
           <button
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={`absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1e3a8a] text-slate-300 shadow-md transition-colors hover:bg-[#0ea5e9] hover:text-white ${focusRing}`}
+            className={`absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1e3a8a] text-slate-300 shadow-md transition-colors hover:bg-[#0ea5e9] hover:text-white ${
+              focusRing || ""
+            }`}
           >
             {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
           </button>
 
+          {/* Logo */}
           <div
             className={`flex items-center gap-3 px-4 py-6 ${
               collapsed ? "justify-center px-2" : ""
@@ -95,7 +124,7 @@ export default function Layout() {
             <img
               src={logo}
               alt="School logo"
-              style={{ borderRadius: "50%", width: "40px", flexShrink: 0 }}
+              className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
             />
             {!collapsed && (
               <div className="min-w-0">
@@ -111,9 +140,38 @@ export default function Layout() {
 
           <div className="mx-4 h-px bg-white/10" />
 
+          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-3 py-5">
-            <NavList collapsed={collapsed} />
+            <NavList collapsed={collapsed} navItems={navItems} />
           </nav>
+
+          {/* User info & logout */}
+          <div className="mx-3 mb-4 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
+                {userInitials}
+              </div>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white truncate">
+                    {user?.name || 'User'}
+                  </div>
+                  <div className="text-xs text-slate-300 truncate">
+                    {user?.role === 'admin' ? 'Administrator' : 'Teacher'}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleLogout}
+              className={`mt-2 w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 hover:text-white transition ${
+                collapsed ? "justify-center" : ""
+              }`}
+            >
+              <LogOut size={16} />
+              {!collapsed && <span>Logout</span>}
+            </button>
+          </div>
 
           {/* Term progress widget */}
           {!collapsed && (
@@ -163,19 +221,24 @@ export default function Layout() {
               </div>
               <button
                 aria-label="Notifications"
-                className={`relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] text-slate-500 transition-colors hover:border-[#0ea5e9]/40 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9] ${focusRing}`}
+                className={`relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] text-slate-500 transition-colors hover:border-[#0ea5e9]/40 hover:bg-[#0ea5e9]/10 hover:text-[#0ea5e9] ${
+                  focusRing || ""
+                }`}
               >
                 <Bell size={16} />
                 <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#0ea5e9] ring-2 ring-white" />
               </button>
               <button
-                className={`flex flex-shrink-0 items-center gap-2 rounded-full border border-[#e2e8f0] py-1 pl-1 pr-3 transition-colors hover:bg-[#f1f5f9] ${focusRing}`}
+                onClick={handleLogout}
+                className={`flex flex-shrink-0 items-center gap-2 rounded-full border border-[#e2e8f0] py-1 pl-1 pr-3 transition-colors hover:bg-[#f1f5f9] ${
+                  focusRing || ""
+                }`}
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1e3a8a] font-mono text-xs font-semibold text-[#0ea5e9]">
-                  AD
+                  {userInitials}
                 </div>
                 <span className="hidden text-sm font-medium text-slate-600 md:inline">
-                  Admin
+                  {user?.name || 'Admin'}
                 </span>
               </button>
             </div>

@@ -7,8 +7,8 @@ import {
   Badge,
   Table,
   EmptyState,
-} from "../components/ui";
-import { getClasses, getRoster } from "../utils/api";
+} from "../../components/ui";
+import { getClasses, getRoster } from "../../utils/api";
 
 function averageTone(avg) {
   if (avg === null) return "slate";

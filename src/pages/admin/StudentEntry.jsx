@@ -11,8 +11,8 @@ import {
   Table,
   Badge,
   focusRing,
-} from "../components/ui";
-import { addStudent, getClasses, getStudents } from "../utils/api";
+} from "../../components/ui";
+import { addStudent, getClasses, getStudents } from "../../utils/api";
 import {
   CLASS_NAMES,
   requiresStream,
@@ -21,7 +21,7 @@ import {
   getSixthFormElectivePool,
   ELECTIVE_SUBJECTS,
   SIXTH_FORM_MAX_SUBJECTS,
-} from "../utils/subjects";
+} from "../../utils/subjects";
 
 export default function StudentEntry() {
   const [students, setStudents] = useState([]);
